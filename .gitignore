@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 .env.local
 
+# test data (may contain personal info)
+test-data.json
+
 # vercel
 .vercel
 
