@@ -1,7 +1,8 @@
 import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry } from '@/types'
 
 function normalizeBullets(text: string): string {
-  return text.split('\n')
+  return text
+    .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
     .map((l) => (/^[•\-\*–]/.test(l) ? l : `• ${l}`))
@@ -10,30 +11,37 @@ function normalizeBullets(text: string): string {
 
 export function serializeExperience(e: ExperienceEntry): string {
   const header = [e.title, e.company, e.location, [e.from, e.to].filter(Boolean).join(' – ')]
-    .filter(Boolean).join(' · ')
+    .filter(Boolean)
+    .join(' · ')
   return [
     header,
     e.description.trim(),
     e.bullets.trim() ? normalizeBullets(e.bullets) : '',
     e.tech.trim(),
-  ].filter(Boolean).join('\n\n')
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 export function serializeProject(p: ProjectEntry): string {
   const links = [p.githubLink, p.demoLink].filter(Boolean)
   const header = [p.name, ...links, [p.from, p.to].filter(Boolean).join(' – ')]
-    .filter(Boolean).join(' · ')
+    .filter(Boolean)
+    .join(' · ')
   return [
     header,
     p.description.trim(),
     p.bullets.trim() ? normalizeBullets(p.bullets) : '',
     p.tech.trim(),
-  ].filter(Boolean).join('\n\n')
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 export function serializeEducation(e: EducationEntry): string {
   const header = [e.degree, e.school, [e.from, e.to].filter(Boolean).join(' – ')]
-    .filter(Boolean).join(' · ')
+    .filter(Boolean)
+    .join(' · ')
   return [header, e.description.trim()].filter(Boolean).join('\n\n')
 }
 

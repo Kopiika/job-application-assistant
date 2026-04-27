@@ -1,5 +1,10 @@
 import type { Profile, TailoredFields, ProjectEntry } from '@/types'
-import { serializeExperience, serializeProject, serializeEducation, serializeLanguages } from '@/lib/profileToCV'
+import {
+  serializeExperience,
+  serializeProject,
+  serializeEducation,
+  serializeLanguages,
+} from '@/lib/profileToCV'
 
 export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields): string {
   const lines: string[] = []
@@ -7,7 +12,9 @@ export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields):
   if (profile.name) lines.push(profile.name)
   lines.push(tailored.position || profile.role)
 
-  const contactParts = [profile.email, profile.location, profile.linkedin, profile.github].filter(Boolean)
+  const contactParts = [profile.email, profile.location, profile.linkedin, profile.github].filter(
+    Boolean
+  )
   if (contactParts.length) lines.push(contactParts.join(' · '))
 
   lines.push('\nSUMMARY')
@@ -47,13 +54,15 @@ function reorderProjects(projects: ProjectEntry[], order: string[]): ProjectEntr
 
   for (const name of order) {
     const idx = projects.findIndex(
-      (p, i) => !used.has(i) && p.name.toLowerCase().includes(name.toLowerCase()),
+      (p, i) => !used.has(i) && p.name.toLowerCase().includes(name.toLowerCase())
     )
     if (idx !== -1) {
       result.push(projects[idx])
       used.add(idx)
     }
   }
-  projects.forEach((p, i) => { if (!used.has(i)) result.push(p) })
+  projects.forEach((p, i) => {
+    if (!used.has(i)) result.push(p)
+  })
   return result
 }

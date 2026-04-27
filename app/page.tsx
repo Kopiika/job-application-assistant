@@ -14,9 +14,19 @@ const PROFILE_KEY = 'job-assistant-profile'
 const APPS_KEY = 'job-assistant-apps'
 
 const DEFAULT_PROFILE: Profile = {
-  name: '', email: '', linkedin: '', github: '', photo: undefined,
-  role: '', skills: '', experience: [], projects: [],
-  education: [], languages: [], location: '', about: '',
+  name: '',
+  email: '',
+  linkedin: '',
+  github: '',
+  photo: undefined,
+  role: '',
+  skills: '',
+  experience: [],
+  projects: [],
+  education: [],
+  languages: [],
+  location: '',
+  about: '',
 }
 
 function migrateProfile(raw: unknown): Profile {
@@ -26,7 +36,7 @@ function migrateProfile(raw: unknown): Profile {
     email: (p.email as string) ?? '',
     linkedin: (p.linkedin as string) ?? '',
     github: (p.github as string) ?? '',
-    photo: (p.photo as string | undefined),
+    photo: p.photo as string | undefined,
     role: (p.role as string) ?? '',
     skills: (p.skills as string) ?? '',
     experience: Array.isArray(p.experience) ? p.experience : [],
@@ -39,9 +49,12 @@ function migrateProfile(raw: unknown): Profile {
 }
 
 const HEADERS: Record<Tab, { title: string; sub: string }> = {
-  generate: { title: 'Generate documents', sub: 'Paste a job description and get a tailored CV and cover letter.' },
-  tracker:  { title: 'Applications', sub: "Every role you've applied to, in one place." },
-  profile:  { title: 'My profile', sub: 'The source material your documents are built from.' },
+  generate: {
+    title: 'Generate documents',
+    sub: 'Paste a job description and get a tailored CV and cover letter.',
+  },
+  tracker: { title: 'Applications', sub: "Every role you've applied to, in one place." },
+  profile: { title: 'My profile', sub: 'The source material your documents are built from.' },
 }
 
 export default function Home() {
@@ -88,26 +101,41 @@ export default function Home() {
       <main style={{ maxWidth: 1320, margin: '0 auto', padding: '32px 40px 60px', width: '100%' }}>
         {/* Breadcrumb + header */}
         <header style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 12, color: 'var(--text-subtle)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--text-subtle)',
+              marginBottom: 6,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
             <span>Apply</span>
             <IconChevronRight size={11} />
             <span>{header.title}</span>
           </div>
-          <h1 className="font-serif" style={{ fontSize: 30, fontWeight: 500, margin: 0, marginBottom: 6, letterSpacing: '-0.01em', color: 'var(--text)' }}>
+          <h1
+            className="font-serif"
+            style={{
+              fontSize: 30,
+              fontWeight: 500,
+              margin: 0,
+              marginBottom: 6,
+              letterSpacing: '-0.01em',
+              color: 'var(--text)',
+            }}
+          >
             {header.title}
           </h1>
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{header.sub}</div>
         </header>
 
-        {tab === 'generate' && (
-          <TabGenerate profile={profile} onSaveApplication={addApplication} />
-        )}
+        {tab === 'generate' && <TabGenerate profile={profile} onSaveApplication={addApplication} />}
         {tab === 'tracker' && (
           <TabTracker applications={applications} setApplications={updateApplications} />
         )}
-        {tab === 'profile' && (
-          <TabProfile profile={profile} onSave={saveProfile} />
-        )}
+        {tab === 'profile' && <TabProfile profile={profile} onSave={saveProfile} />}
       </main>
     </div>
   )

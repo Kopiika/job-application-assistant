@@ -9,7 +9,7 @@ const env = Object.fromEntries(
     .map((line) => {
       const [key, ...rest] = line.split('=')
       return [key.trim(), rest.join('=').trim().replace(/^"|"$/g, '')]
-    }),
+    })
 )
 
 const CLIENT_ID = env.GOOGLE_CLIENT_ID

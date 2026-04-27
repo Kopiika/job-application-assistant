@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   if (!fileBase64 || !fileName) {
     return NextResponse.json(
       { error: 'Missing required fields: fileBase64, fileName' },
-      { status: 400 },
+      { status: 400 }
     )
   }
 
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
             'Personal "My Drive" folders do not work with service accounts. ' +
             'Create a Shared Drive folder and share it with the service account email.',
         },
-        { status: 400 },
+        { status: 400 }
       )
     }
     return NextResponse.json({ error: `Drive upload failed: ${message}` }, { status: 500 })

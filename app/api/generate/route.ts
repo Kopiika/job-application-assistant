@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { buildGeneratePrompt, buildCVSummaryPrompt, buildCoverLetterPrompt } from '@/lib/buildPrompt'
+import {
+  buildGeneratePrompt,
+  buildCVSummaryPrompt,
+  buildCoverLetterPrompt,
+} from '@/lib/buildPrompt'
 import type { GenerateRequest, TailoredFields } from '@/types'
 
 const client = new Anthropic()
 
 export async function POST(req: NextRequest) {
-  const { jobDescription, baseCV, generateCV = true, generateCover = true }: GenerateRequest = await req.json()
+  const {
+    jobDescription,
+    baseCV,
+    generateCV = true,
+    generateCover = true,
+  }: GenerateRequest = await req.json()
 
   let tailoredFields: TailoredFields | null = null
   let coverLetter: string | null = null
@@ -19,7 +28,12 @@ export async function POST(req: NextRequest) {
     })
     const text = message.content[0].type === 'text' ? message.content[0].text : ''
     const parsed = JSON.parse(text)
-    tailoredFields = { position: parsed.position, summary: parsed.summary, skills: parsed.skills, projectsOrder: parsed.projectsOrder ?? [] }
+    tailoredFields = {
+      position: parsed.position,
+      summary: parsed.summary,
+      skills: parsed.skills,
+      projectsOrder: parsed.projectsOrder ?? [],
+    }
     coverLetter = parsed.coverLetter ?? null
   } else if (generateCV) {
     const message = await client.messages.create({
@@ -29,7 +43,12 @@ export async function POST(req: NextRequest) {
     })
     const text = message.content[0].type === 'text' ? message.content[0].text : ''
     const parsed = JSON.parse(text)
-    tailoredFields = { position: parsed.position, summary: parsed.summary, skills: parsed.skills, projectsOrder: parsed.projectsOrder ?? [] }
+    tailoredFields = {
+      position: parsed.position,
+      summary: parsed.summary,
+      skills: parsed.skills,
+      projectsOrder: parsed.projectsOrder ?? [],
+    }
   } else if (generateCover) {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',

@@ -14,8 +14,7 @@ import {
   LevelFormat,
 } from 'docx'
 
-
-const ACCENT = '1A56A0' 
+const ACCENT = '1A56A0'
 const GRAY = '555555'
 const LIGHT = '999999'
 const DIVIDER_COLOR = '999999'
@@ -123,7 +122,6 @@ function sectionHeading(text: string): Paragraph {
     children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
   })
 }
-
 
 function sectionDivider(): Paragraph {
   return new Paragraph({
@@ -403,7 +401,7 @@ function buildHeader(
   if (photoBuffer) {
     const imgType = detectImageType(photoBuffer)
     const PHOTO_W = 1440 // 1 inch
-    const GAP = 280 
+    const GAP = 280
     const TEXT_W = CONTENT_W - PHOTO_W - GAP
 
     const photoCell = new TableCell({
@@ -478,7 +476,7 @@ function buildHeader(
           }),
         ]
       : []),
-    
+
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },

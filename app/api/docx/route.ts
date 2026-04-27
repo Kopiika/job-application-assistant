@@ -5,7 +5,10 @@ export async function POST(req: NextRequest) {
   const { text, type, name, photo } = await req.json()
 
   if (!text || !type || !name) {
-    return NextResponse.json({ error: 'Missing required fields: text, type, name' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Missing required fields: text, type, name' },
+      { status: 400 }
+    )
   }
 
   if (type !== 'cv' && type !== 'cover') {
@@ -14,7 +17,9 @@ export async function POST(req: NextRequest) {
 
   const photoBuffer = photo ? Buffer.from(photo as string, 'base64') : undefined
   const buffer =
-    type === 'cv' ? await createCVDocx(text, name, photoBuffer) : await createCoverLetterDocx(text, name)
+    type === 'cv'
+      ? await createCVDocx(text, name, photoBuffer)
+      : await createCoverLetterDocx(text, name)
 
   const fileName =
     type === 'cv'

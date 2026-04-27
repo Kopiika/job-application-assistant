@@ -81,7 +81,9 @@ export function PhotoCropper({ src, onCrop }: Props) {
     ctx.drawImage(image, 0, realY, realSize, realSize, 0, 0, realSize, realSize)
 
     outputCanvas.toBlob(
-      (blob) => { if (blob) onCrop(blob) },
+      (blob) => {
+        if (blob) onCrop(blob)
+      },
       'image/jpeg',
       0.92
     )
