@@ -4,6 +4,7 @@ import { useState } from 'react'
 import CVForm from '@/components/CVForm'
 import JobForm from '@/components/JobForm'
 import ResultPanel from '@/components/ResultPanel'
+import DriveUpload from '@/components/DriveUpload'
 import type { GenerateResponse } from '@/types'
 
 function extractName(cv: string): string {
@@ -26,11 +27,18 @@ export default function Home() {
         </div>
 
         {result && (
-          <ResultPanel
-            cvSummary={result.cvSummary}
-            coverLetter={result.coverLetter}
-            candidateName={extractName(baseCV)}
-          />
+          <>
+            <ResultPanel
+              cvSummary={result.cvSummary}
+              coverLetter={result.coverLetter}
+              candidateName={extractName(baseCV)}
+            />
+            <DriveUpload
+              cvSummary={result.cvSummary}
+              coverLetter={result.coverLetter}
+              candidateName={extractName(baseCV)}
+            />
+          </>
         )}
       </div>
     </div>
