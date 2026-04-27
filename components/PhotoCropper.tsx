@@ -87,11 +87,11 @@ export function PhotoCropper({ src, onCrop }: Props) {
     )
   }
 
-  if (!image) return <p className="text-sm text-gray-500">Завантаження...</p>
+  if (!image) return <p className="text-sm text-gray-500">Loading...</p>
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-gray-500">Перетягни рамку щоб вибрати область</p>
+      <p className="text-sm text-gray-500">Drag the frame to select an area</p>
       <canvas
         ref={canvasRef}
         className="cursor-ns-resize rounded border"
