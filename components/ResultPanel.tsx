@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   IconFileText, IconMail, IconEdit, IconCheck,
-  IconCopy, IconDownload, IconCloud, IconPlus,
+  IconCopy, IconDownload, IconCloud, IconPlus, IconCamera,
 } from '@/components/icons'
 
 interface ResultPanelProps {
@@ -48,6 +48,19 @@ export default function ResultPanel({
   const [downloading, setDownloading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [driveLink, setDriveLink] = useState<string | null>(null)
+  const [photo, setPhoto] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      setPhoto(result.split(',')[1])
+    }
+    reader.readAsDataURL(file)
+  }
 
   const current = (activeTab === 'cv' ? cvSummary : coverLetter) ?? ''
   const availableTabs: DocTab[] = [
@@ -71,7 +84,7 @@ export default function ResultPanel({
       const res = await fetch('/api/docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: current, type: activeTab, name: candidateName }),
+        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo }),
       })
       if (!res.ok) throw new Error('Failed')
       const blob = await res.blob()
@@ -95,7 +108,7 @@ export default function ResultPanel({
       const docxRes = await fetch('/api/docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: current, type: activeTab, name: candidateName }),
+        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo }),
       })
       if (!docxRes.ok) throw new Error('docx failed')
       const buf = await docxRes.arrayBuffer()
@@ -166,13 +179,30 @@ export default function ResultPanel({
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <IconButton title={editing ? 'Done editing' : 'Edit'} onClick={() => setEditing((v) => !v)}>
             {editing ? <IconCheck size={15} /> : <IconEdit size={15} />}
           </IconButton>
           <IconButton title="Copy to clipboard" onClick={handleCopy}>
             <IconCopy size={15} />
           </IconButton>
+          {activeTab === 'cv' && (
+            <>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png"
+                style={{ display: 'none' }}
+                onChange={handlePhotoChange}
+              />
+              <IconButton
+                title={photo ? 'Photo added — click to change' : 'Add photo to CV'}
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <IconCamera size={15} style={photo ? { color: 'var(--accent)' } : undefined} />
+              </IconButton>
+            </>
+          )}
           <IconButton title={downloading ? 'Downloading…' : 'Download .docx'} onClick={handleDownload}>
             <IconDownload size={15} style={downloading ? { animation: 'spin 1s linear infinite' } : undefined} />
           </IconButton>

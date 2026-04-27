@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createCVDocx, createCoverLetterDocx } from '@/lib/createDocx'
 
 export async function POST(req: NextRequest) {
-  const { text, type, name } = await req.json()
+  const { text, type, name, photo } = await req.json()
 
   if (!text || !type || !name) {
     return NextResponse.json({ error: 'Missing required fields: text, type, name' }, { status: 400 })
@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'type must be "cv" or "cover"' }, { status: 400 })
   }
 
+  const photoBuffer = photo ? Buffer.from(photo as string, 'base64') : undefined
   const buffer =
-    type === 'cv' ? await createCVDocx(text, name) : await createCoverLetterDocx(text, name)
+    type === 'cv' ? await createCVDocx(text, name, photoBuffer) : await createCoverLetterDocx(text, name)
 
   const fileName =
     type === 'cv'

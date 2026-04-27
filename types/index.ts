@@ -28,14 +28,42 @@ export interface DriveUploadResponse {
   fileName: string
 }
 
+export interface ExperienceEntry {
+  title: string
+  company: string
+  location: string
+  from: string
+  to: string
+  description: string
+  bullets: string
+  tech: string
+}
+
+export interface ProjectEntry {
+  name: string
+  from: string
+  to: string
+  description: string
+  bullets: string
+  tech: string
+}
+
+export interface EducationEntry {
+  degree: string
+  school: string
+  from: string
+  to: string
+  description: string
+}
+
 export interface Profile {
   name: string
   email: string
   role: string
   skills: string
-  experience: string
-  projects: string
-  education: string
+  experience: ExperienceEntry[]
+  projects: ProjectEntry[]
+  education: EducationEntry[]
   languages: string
   location: string
   about: string

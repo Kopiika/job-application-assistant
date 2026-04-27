@@ -15,8 +15,24 @@ const APPS_KEY = 'job-assistant-apps'
 
 const DEFAULT_PROFILE: Profile = {
   name: '', email: '', role: '',
-  skills: '', experience: '', projects: '',
-  education: '', languages: '', location: '', about: '',
+  skills: '', experience: [], projects: [],
+  education: [], languages: '', location: '', about: '',
+}
+
+function migrateProfile(raw: unknown): Profile {
+  const p = (raw ?? {}) as Record<string, unknown>
+  return {
+    name: (p.name as string) ?? '',
+    email: (p.email as string) ?? '',
+    role: (p.role as string) ?? '',
+    skills: (p.skills as string) ?? '',
+    experience: Array.isArray(p.experience) ? p.experience : [],
+    projects: Array.isArray(p.projects) ? p.projects : [],
+    education: Array.isArray(p.education) ? p.education : [],
+    languages: (p.languages as string) ?? '',
+    location: (p.location as string) ?? '',
+    about: (p.about as string) ?? '',
+  }
 }
 
 const HEADERS: Record<Tab, { title: string; sub: string }> = {
@@ -34,7 +50,7 @@ export default function Home() {
   useEffect(() => {
     try {
       const p = localStorage.getItem(PROFILE_KEY)
-      if (p) setProfile(JSON.parse(p))
+      if (p) setProfile(migrateProfile(JSON.parse(p)))
       const a = localStorage.getItem(APPS_KEY)
       if (a) setApplications(JSON.parse(a))
     } catch {}

@@ -28,7 +28,7 @@ INSTRUCTIONS:
    - Use a natural variation of their current/target role
    - Never invent a title they clearly have not held
 
-2. SUMMARY — Exactly 3 sentences in ${language}.
+2. SUMMARY — Exactly 3 sentences in ${language}, written in first person ("I am...", "I built...", "I bring...").
    - Sentence 1: who the candidate is and their core skill area
    - Sentence 2: most relevant concrete achievement or experience for THIS role
    - Sentence 3: what specifically they bring to this company/role
@@ -81,7 +81,7 @@ ${jobDescription}
 INSTRUCTIONS:
 
 1. POSITION — Best-fit job title for this role given the candidate's background.
-2. SUMMARY — Exactly 3 sentences: who they are, key achievement relevant to this job, what they bring.
+2. SUMMARY — Exactly 3 sentences in first person ("I am...", "I built...", "I bring..."): who they are, key achievement relevant to this job, what they bring.
 3. SKILLS — Reorder existing skills most-relevant-first. May append "Currently learning: X" only if X is in the job description.
 4. PROJECTS ORDER — All project names from base CV in order of relevance (most relevant first). Use EXACT names.
 

@@ -1,4 +1,5 @@
-import type { Profile, TailoredFields } from '@/types'
+import type { Profile, TailoredFields, ProjectEntry } from '@/types'
+import { serializeExperience, serializeProject, serializeEducation } from '@/lib/profileToCV'
 
 export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields): string {
   const lines: string[] = []
@@ -15,19 +16,20 @@ export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields):
   lines.push('\nSKILLS')
   lines.push(tailored.skills)
 
-  if (profile.experience) {
+  if (profile.experience.length) {
     lines.push('\nEXPERIENCE')
-    lines.push(profile.experience)
+    lines.push(profile.experience.map(serializeExperience).join('\n\n'))
   }
 
-  if (profile.projects) {
+  if (profile.projects.length) {
     lines.push('\nPROJECTS')
-    lines.push(reorderProjects(profile.projects, tailored.projectsOrder))
+    const ordered = reorderProjects(profile.projects, tailored.projectsOrder)
+    lines.push(ordered.map(serializeProject).join('\n\n'))
   }
 
-  if (profile.education) {
+  if (profile.education.length) {
     lines.push('\nEDUCATION')
-    lines.push(profile.education)
+    lines.push(profile.education.map(serializeEducation).join('\n\n'))
   }
 
   if (profile.languages) {
@@ -38,26 +40,20 @@ export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields):
   return lines.join('\n')
 }
 
-function reorderProjects(projectsText: string, order: string[]): string {
-  if (!order.length) return projectsText
-
-  const blocks = projectsText.split(/\n\n+/).filter((b) => b.trim())
-  const result: string[] = []
+function reorderProjects(projects: ProjectEntry[], order: string[]): ProjectEntry[] {
+  if (!order.length) return projects
+  const result: ProjectEntry[] = []
   const used = new Set<number>()
 
   for (const name of order) {
-    const idx = blocks.findIndex(
-      (b, i) => !used.has(i) && b.toLowerCase().includes(name.toLowerCase()),
+    const idx = projects.findIndex(
+      (p, i) => !used.has(i) && p.name.toLowerCase().includes(name.toLowerCase()),
     )
     if (idx !== -1) {
-      result.push(blocks[idx])
+      result.push(projects[idx])
       used.add(idx)
     }
   }
-
-  blocks.forEach((b, i) => {
-    if (!used.has(i)) result.push(b)
-  })
-
-  return result.join('\n\n')
+  projects.forEach((p, i) => { if (!used.has(i)) result.push(p) })
+  return result
 }
