@@ -1,11 +1,20 @@
 export interface GenerateRequest {
   jobDescription: string
   baseCV: string
+  generateCV?: boolean
+  generateCover?: boolean
+}
+
+export interface TailoredFields {
+  position: string
+  summary: string
+  skills: string
+  projectsOrder: string[]
 }
 
 export interface GenerateResponse {
-  cvSummary: string
-  coverLetter: string
+  tailoredFields: TailoredFields | null
+  coverLetter: string | null
 }
 
 export interface DocxRequest {
@@ -17,4 +26,34 @@ export interface DocxRequest {
 export interface DriveUploadResponse {
   driveLink: string
   fileName: string
+}
+
+export interface Profile {
+  name: string
+  email: string
+  role: string
+  skills: string
+  experience: string
+  projects: string
+  education: string
+  languages: string
+  location: string
+  about: string
+}
+
+export type AppStatus = 'draft' | 'applied' | 'interview' | 'offer' | 'rejected'
+
+export interface Application {
+  id: string
+  company: string
+  role: string
+  location: string
+  status: AppStatus
+  appliedOn: string
+  updatedOn: string
+  notes: string
+  url: string
+  cvSummary: string
+  coverLetter: string
+  starred: boolean
 }

@@ -1,26 +1,79 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /*color-scheme: light;*/
+
+    --bg: oklch(0.985 0.005 85);
+    --surface: oklch(1 0 0);
+    --surface-2: oklch(0.97 0.006 85);
+    --border: oklch(0.92 0.008 85);
+    --border-strong: oklch(0.86 0.01 85);
+    --text: oklch(0.22 0.012 70);
+    --text-muted: oklch(0.52 0.015 70);
+    --text-subtle: oklch(0.66 0.012 70);
+    --accent: oklch(0.68 0.15 35);
+    --accent-soft: oklch(0.95 0.04 35);
+    --accent-hover: oklch(0.62 0.16 35);
+    --success: oklch(0.65 0.13 155);
+    --success-soft: oklch(0.95 0.04 155);
+    --warning: oklch(0.75 0.13 75);
+    --warning-soft: oklch(0.96 0.05 75);
+    --danger: oklch(0.62 0.18 25);
+    --danger-soft: oklch(0.95 0.04 25);
+    --info: oklch(0.62 0.13 240);
+    --info-soft: oklch(0.95 0.03 240);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+    --shadow-sm: 0 1px 2px oklch(0.2 0.02 70 / 0.04);
+    --shadow: 0 1px 3px oklch(0.2 0.02 70 / 0.06), 0 1px 2px oklch(0.2 0.02 70 / 0.04);
+    --shadow-lg: 0 10px 24px oklch(0.2 0.02 70 / 0.08), 0 2px 6px oklch(0.2 0.02 70 / 0.04);
   }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  body {
+    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    background-color: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+    padding: 0;
+  }
+
+  input, textarea, select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  textarea { resize: vertical; }
+
+  ::placeholder { color: var(--text-subtle); opacity: 1; }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+.font-serif { font-family: var(--font-serif), 'IBM Plex Serif', Georgia, serif; }
+.font-mono-code { font-family: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(32px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.96) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }

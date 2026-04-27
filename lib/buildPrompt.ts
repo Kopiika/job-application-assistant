@@ -5,17 +5,13 @@ export interface PromptInput {
   language?: 'English' | 'Finnish'
 }
 
-// Повертає промпт який просить Claude згенерувати CV summary + cover letter
-// як JSON об'єкт — щоб легко парсити відповідь на бекенді
 export function buildGeneratePrompt(input: PromptInput): string {
   const { jobDescription, baseCV, candidateName = 'the candidate', language = 'English' } = input
 
-  return `You are an expert career coach specializing in tech industry applications.
-
-Your task is to analyze the job description and the candidate's CV, then generate two tailored documents.
+  return `You are an expert career coach. Generate ONLY the parts of the candidate's CV that change per job application. Do NOT rewrite or modify work experience, education, or project descriptions — only reorder and tailor the dynamic sections.
 
 CANDIDATE NAME: ${candidateName}
-LANGUAGE: Write both documents in ${language}.
+LANGUAGE: ${language}
 
 ---
 CANDIDATE'S BASE CV:
@@ -28,47 +24,74 @@ ${jobDescription}
 ---
 INSTRUCTIONS:
 
-1. CV SUMMARY — 4 to 6 bullet points max.
-   - Pick only the most relevant experience and skills for THIS specific job
-   - Use keywords from the job description naturally
-   - Be concrete — use numbers and results where possible (e.g. "Built admin panel for 1,000 users", "100% Lighthouse score")
-   - Do NOT list everything from the CV — only what matches this role
+1. POSITION — The job title that best matches both the candidate's background and this specific role.
+   - Use a natural variation of their current/target role
+   - Never invent a title they clearly have not held
 
-2. COVER LETTER — 150 to 200 words max.
+2. SUMMARY — Exactly 3 sentences in ${language}.
+   - Sentence 1: who the candidate is and their core skill area
+   - Sentence 2: most relevant concrete achievement or experience for THIS role
+   - Sentence 3: what specifically they bring to this company/role
+   - No clichés: no "passionate", "hardworking", "team player"
+
+3. SKILLS — Reorder the candidate's existing skills so the most relevant ones appear first.
+   - Do not add skills the candidate does not have
+   - You may append "Currently learning: X" ONLY if X appears in the job description and is plausible given the candidate's profile
+   - Preserve the original formatting style (comma-separated or grouped)
+
+4. PROJECTS ORDER — List the exact project names from the base CV in order of relevance to this job (most relevant first).
+   - Use the EXACT project names as they appear in the base CV
+   - Include ALL projects
+
+5. COVER LETTER — 150 to 200 words in ${language}.
    - Do NOT start with "My name is" or "I am writing to apply"
-   - Open with a specific hook — something concrete about the role or company
+   - Open with a specific hook about the role or company
    - Paragraph 1: why this role / company specifically
-   - Paragraph 2: 2-3 most relevant achievements that match the job requirements
-   - Paragraph 3: one sentence call to action
-   - Confident tone, no clichés like "team player", "passionate", "hardworking"
+   - Paragraph 2: 2-3 concrete achievements from the CV matching the job
+   - Paragraph 3: one-sentence call to action
+   - Confident tone, no clichés
 
 IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no backticks, no explanation.
-Use this exact format:
 {
-  "cvSummary": "• bullet 1\\n• bullet 2\\n• bullet 3\\n• bullet 4",
-  "coverLetter": "full cover letter text here as a single string with \\n for paragraph breaks"
+  "position": "...",
+  "summary": "...",
+  "skills": "...",
+  "projectsOrder": ["Exact Project Name 1", "Exact Project Name 2"],
+  "coverLetter": "..."
 }`
 }
 
-// Окремий промпт тільки для CV summary (якщо треба regenerate одного документу)
 export function buildCVSummaryPrompt(input: PromptInput): string {
-  const { jobDescription, baseCV, language = 'English' } = input
+  const { jobDescription, baseCV, candidateName = 'the candidate', language = 'English' } = input
 
-  return `You are an expert career coach. Create a tailored CV summary in ${language}.
+  return `You are an expert career coach. Generate ONLY the parts of the candidate's CV that change per job application.
 
-Rules:
-- 4 to 6 bullet points only
-- Use keywords from the job description
-- Be concrete, use numbers and results
-- Only include what is relevant to THIS job
+CANDIDATE NAME: ${candidateName}
+LANGUAGE: ${language}
 
-BASE CV:
+---
+CANDIDATE'S BASE CV:
 ${baseCV}
 
+---
 JOB DESCRIPTION:
 ${jobDescription}
 
-Respond with ONLY the bullet points, one per line, starting each with "•". No extra text.`
+---
+INSTRUCTIONS:
+
+1. POSITION — Best-fit job title for this role given the candidate's background.
+2. SUMMARY — Exactly 3 sentences: who they are, key achievement relevant to this job, what they bring.
+3. SKILLS — Reorder existing skills most-relevant-first. May append "Currently learning: X" only if X is in the job description.
+4. PROJECTS ORDER — All project names from base CV in order of relevance (most relevant first). Use EXACT names.
+
+IMPORTANT: Respond with ONLY a valid JSON object. No markdown, no backticks.
+{
+  "position": "...",
+  "summary": "...",
+  "skills": "...",
+  "projectsOrder": ["Exact Project Name 1", "Exact Project Name 2"]
+}`
 }
 
 // Окремий промпт тільки для cover letter
@@ -94,32 +117,6 @@ JOB DESCRIPTION:
 ${jobDescription}
 
 Respond with ONLY the cover letter text. No subject line, no "Dear Hiring Manager" unless it fits naturally.`
-}
-
-// Промпт для interview prep
-export function buildInterviewPrepPrompt(input: PromptInput): string {
-  const { jobDescription, baseCV, language = 'English' } = input
-
-  return `You are an expert interview coach. Based on the job description and candidate's CV, generate the top 8 interview questions likely to be asked, with suggested answers.
-
-Rules:
-- Mix of technical and behavioral questions
-- Answers should reference specific projects and skills from the CV
-- Keep each answer under 100 words
-- Language: ${language}
-
-BASE CV:
-${baseCV}
-
-JOB DESCRIPTION:
-${jobDescription}
-
-Respond with ONLY a valid JSON array. No markdown, no backticks.
-Format:
-[
-  { "question": "...", "answer": "..." },
-  { "question": "...", "answer": "..." }
-]`
 }
 
 // Промпт для аналізу gaps між вакансією і CV
