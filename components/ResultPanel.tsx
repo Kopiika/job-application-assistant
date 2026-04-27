@@ -1,15 +1,16 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
   IconFileText, IconMail, IconEdit, IconCheck,
-  IconCopy, IconDownload, IconCloud, IconPlus, IconCamera,
+  IconCopy, IconDownload, IconCloud, IconPlus,
 } from '@/components/icons'
 
 interface ResultPanelProps {
   cvSummary: string | null
   coverLetter: string | null
   candidateName: string
+  photo?: string
   onUpdate: (key: 'cv' | 'cover', value: string) => void
   onSaveToTracker: () => void
 }
@@ -41,26 +42,16 @@ function IconButton({
 }
 
 export default function ResultPanel({
-  cvSummary, coverLetter, candidateName, onUpdate, onSaveToTracker,
+  cvSummary, coverLetter, candidateName, photo, onUpdate, onSaveToTracker,
 }: ResultPanelProps) {
   const [activeTab, setActiveTab] = useState<DocTab>(cvSummary ? 'cv' : 'cover')
   const [editing, setEditing] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [driveLink, setDriveLink] = useState<string | null>(null)
-  const [photo, setPhoto] = useState<string | null>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      setPhoto(result.split(',')[1])
-    }
-    reader.readAsDataURL(file)
-  }
+  // photo is a full data URL from profile; extract base64 for the API
+  const photoBase64 = photo?.includes(',') ? photo.split(',')[1] : photo
 
   const current = (activeTab === 'cv' ? cvSummary : coverLetter) ?? ''
   const availableTabs: DocTab[] = [
@@ -84,7 +75,7 @@ export default function ResultPanel({
       const res = await fetch('/api/docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo }),
+        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo: photoBase64 }),
       })
       if (!res.ok) throw new Error('Failed')
       const blob = await res.blob()
@@ -108,7 +99,7 @@ export default function ResultPanel({
       const docxRes = await fetch('/api/docx', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo }),
+        body: JSON.stringify({ text: current, type: activeTab, name: candidateName, photo: photoBase64 }),
       })
       if (!docxRes.ok) throw new Error('docx failed')
       const buf = await docxRes.arrayBuffer()
@@ -186,23 +177,6 @@ export default function ResultPanel({
           <IconButton title="Copy to clipboard" onClick={handleCopy}>
             <IconCopy size={15} />
           </IconButton>
-          {activeTab === 'cv' && (
-            <>
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/jpeg,image/png"
-                style={{ display: 'none' }}
-                onChange={handlePhotoChange}
-              />
-              <IconButton
-                title={photo ? 'Photo added — click to change' : 'Add photo to CV'}
-                onClick={() => photoInputRef.current?.click()}
-              >
-                <IconCamera size={15} style={photo ? { color: 'var(--accent)' } : undefined} />
-              </IconButton>
-            </>
-          )}
           <IconButton title={downloading ? 'Downloading…' : 'Download .docx'} onClick={handleDownload}>
             <IconDownload size={15} style={downloading ? { animation: 'spin 1s linear infinite' } : undefined} />
           </IconButton>

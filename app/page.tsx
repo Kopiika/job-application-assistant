@@ -14,9 +14,9 @@ const PROFILE_KEY = 'job-assistant-profile'
 const APPS_KEY = 'job-assistant-apps'
 
 const DEFAULT_PROFILE: Profile = {
-  name: '', email: '', role: '',
-  skills: '', experience: [], projects: [],
-  education: [], languages: '', location: '', about: '',
+  name: '', email: '', linkedin: '', github: '', photo: undefined,
+  role: '', skills: '', experience: [], projects: [],
+  education: [], languages: [], location: '', about: '',
 }
 
 function migrateProfile(raw: unknown): Profile {
@@ -24,12 +24,15 @@ function migrateProfile(raw: unknown): Profile {
   return {
     name: (p.name as string) ?? '',
     email: (p.email as string) ?? '',
+    linkedin: (p.linkedin as string) ?? '',
+    github: (p.github as string) ?? '',
+    photo: (p.photo as string | undefined),
     role: (p.role as string) ?? '',
     skills: (p.skills as string) ?? '',
     experience: Array.isArray(p.experience) ? p.experience : [],
     projects: Array.isArray(p.projects) ? p.projects : [],
     education: Array.isArray(p.education) ? p.education : [],
-    languages: (p.languages as string) ?? '',
+    languages: Array.isArray(p.languages) ? p.languages : [],
     location: (p.location as string) ?? '',
     about: (p.about as string) ?? '',
   }

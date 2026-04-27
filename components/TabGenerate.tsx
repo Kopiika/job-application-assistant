@@ -171,6 +171,7 @@ export default function TabGenerate({ profile, onSaveApplication }: TabGenerateP
               cvSummary={genState.cv}
               coverLetter={genState.cover}
               candidateName={profile.name || 'Candidate'}
+              photo={profile.photo}
               onUpdate={handleUpdate}
               onSaveToTracker={handleSaveToTracker}
             />

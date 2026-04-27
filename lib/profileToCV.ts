@@ -1,4 +1,4 @@
-import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry } from '@/types'
+import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry } from '@/types'
 
 function normalizeBullets(text: string): string {
   return text.split('\n')
@@ -20,7 +20,8 @@ export function serializeExperience(e: ExperienceEntry): string {
 }
 
 export function serializeProject(p: ProjectEntry): string {
-  const header = [p.name, [p.from, p.to].filter(Boolean).join(' – ')]
+  const links = [p.githubLink, p.demoLink].filter(Boolean)
+  const header = [p.name, ...links, [p.from, p.to].filter(Boolean).join(' – ')]
     .filter(Boolean).join(' · ')
   return [
     header,
@@ -36,12 +37,18 @@ export function serializeEducation(e: EducationEntry): string {
   return [header, e.description.trim()].filter(Boolean).join('\n\n')
 }
 
+export function serializeLanguages(entries: LanguageEntry[]): string {
+  return entries.map((l) => `${l.language}: ${l.level}`).join('\n')
+}
+
 export function profileToCV(p: Profile): string {
   const lines: string[] = []
 
   if (p.name) lines.push(p.name)
   if (p.role) lines.push(p.role)
-  if (p.email || p.location) lines.push([p.email, p.location].filter(Boolean).join(' · '))
+
+  const contactParts = [p.email, p.location, p.linkedin, p.github].filter(Boolean)
+  if (contactParts.length) lines.push(contactParts.join(' · '))
 
   if (p.about) {
     lines.push('\nABOUT')
@@ -63,9 +70,9 @@ export function profileToCV(p: Profile): string {
     lines.push('\nEDUCATION')
     lines.push(p.education.map(serializeEducation).join('\n\n'))
   }
-  if (p.languages) {
+  if (p.languages.length) {
     lines.push('\nLANGUAGES')
-    lines.push(p.languages)
+    lines.push(serializeLanguages(p.languages))
   }
 
   return lines.join('\n')

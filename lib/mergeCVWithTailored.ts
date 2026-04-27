@@ -1,14 +1,14 @@
 import type { Profile, TailoredFields, ProjectEntry } from '@/types'
-import { serializeExperience, serializeProject, serializeEducation } from '@/lib/profileToCV'
+import { serializeExperience, serializeProject, serializeEducation, serializeLanguages } from '@/lib/profileToCV'
 
 export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields): string {
   const lines: string[] = []
 
   if (profile.name) lines.push(profile.name)
   lines.push(tailored.position || profile.role)
-  if (profile.email || profile.location) {
-    lines.push([profile.email, profile.location].filter(Boolean).join(' · '))
-  }
+
+  const contactParts = [profile.email, profile.location, profile.linkedin, profile.github].filter(Boolean)
+  if (contactParts.length) lines.push(contactParts.join(' · '))
 
   lines.push('\nSUMMARY')
   lines.push(tailored.summary)
@@ -32,9 +32,9 @@ export function mergeCVWithTailored(profile: Profile, tailored: TailoredFields):
     lines.push(profile.education.map(serializeEducation).join('\n\n'))
   }
 
-  if (profile.languages) {
+  if (profile.languages.length) {
     lines.push('\nLANGUAGES')
-    lines.push(profile.languages)
+    lines.push(serializeLanguages(profile.languages))
   }
 
   return lines.join('\n')

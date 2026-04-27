@@ -46,6 +46,8 @@ export interface ProjectEntry {
   description: string
   bullets: string
   tech: string
+  githubLink: string
+  demoLink: string
 }
 
 export interface EducationEntry {
@@ -56,15 +58,23 @@ export interface EducationEntry {
   description: string
 }
 
+export interface LanguageEntry {
+  language: string
+  level: string
+}
+
 export interface Profile {
   name: string
   email: string
+  linkedin: string
+  github: string
+  photo?: string
   role: string
   skills: string
   experience: ExperienceEntry[]
   projects: ProjectEntry[]
   education: EducationEntry[]
-  languages: string
+  languages: LanguageEntry[]
   location: string
   about: string
 }
