@@ -8,6 +8,7 @@ interface TopNavProps {
   tab: Tab
   setTab: (tab: Tab) => void
   appCount: number
+  onSignOut: () => void
 }
 
 const items: {
@@ -26,7 +27,7 @@ const items: {
   { key: 'profile', label: 'My profile', icon: <IconUser size={15} />, getHint: () => '' },
 ]
 
-export default function Sidebar({ tab, setTab, appCount }: TopNavProps) {
+export default function Sidebar({ tab, setTab, appCount, onSignOut }: TopNavProps) {
   return (
     <header
       style={{
@@ -118,6 +119,21 @@ export default function Sidebar({ tab, setTab, appCount }: TopNavProps) {
           )
         })}
       </nav>
+
+      <button
+        onClick={onSignOut}
+        style={{
+          fontSize: 13,
+          color: 'var(--text-muted)',
+          padding: '6px 12px',
+          borderRadius: 'var(--radius-sm)',
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+      >
+        Sign out
+      </button>
     </header>
   )
 }

@@ -6,12 +6,10 @@ import TabGenerate from '@/components/TabGenerate'
 import TabProfile from '@/components/TabProfile'
 import TabTracker from '@/components/TabTracker'
 import { IconChevronRight } from '@/components/icons'
+import { createClient } from '@/lib/supabase/client'
 import type { Profile, Application } from '@/types'
 
 type Tab = 'generate' | 'tracker' | 'profile'
-
-const PROFILE_KEY = 'job-assistant-profile'
-const APPS_KEY = 'job-assistant-apps'
 
 const DEFAULT_PROFILE: Profile = {
   name: '',
@@ -48,6 +46,23 @@ function migrateProfile(raw: unknown): Profile {
   }
 }
 
+function rowToApplication(row: Record<string, unknown>): Application {
+  return {
+    id: row.id as string,
+    company: (row.company as string) ?? '',
+    role: (row.role as string) ?? '',
+    location: (row.location as string) ?? '',
+    status: (row.status as Application['status']) ?? 'draft',
+    appliedOn: (row.applied_on as string) ?? '',
+    updatedOn: (row.updated_on as string) ?? '',
+    notes: (row.notes as string) ?? '',
+    url: (row.url as string) ?? '',
+    cvSummary: (row.cv_summary as string) ?? '',
+    coverLetter: (row.cover_letter as string) ?? '',
+    starred: (row.starred as boolean) ?? false,
+  }
+}
+
 const HEADERS: Record<Tab, { title: string; sub: string }> = {
   generate: {
     title: 'Generate documents',
@@ -63,31 +78,98 @@ export default function Home() {
   const [applications, setApplications] = useState<Application[]>([])
   const [hydrated, setHydrated] = useState(false)
 
+  const supabase = createClient()
+
   useEffect(() => {
-    try {
-      const p = localStorage.getItem(PROFILE_KEY)
-      if (p) setProfile(migrateProfile(JSON.parse(p)))
-      const a = localStorage.getItem(APPS_KEY)
-      if (a) setApplications(JSON.parse(a))
-    } catch {}
-    setHydrated(true)
+    async function load() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const [{ data: profileRow }, { data: appRows }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', user.id).single(),
+        supabase.from('applications').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ])
+
+      if (profileRow) setProfile(migrateProfile(profileRow))
+      if (appRows) setApplications(appRows.map(rowToApplication))
+
+      setHydrated(true)
+    }
+    load()
   }, [])
 
-  function saveProfile(p: Profile) {
+  async function saveProfile(p: Profile) {
     setProfile(p)
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p))
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      ...p,
+      updated_at: new Date().toISOString(),
+    })
   }
 
-  function addApplication(app: Application) {
+  async function addApplication(app: Application) {
     const next = [app, ...applications]
     setApplications(next)
-    localStorage.setItem(APPS_KEY, JSON.stringify(next))
     setTab('tracker')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('applications').insert({
+      id: app.id,
+      user_id: user.id,
+      company: app.company,
+      role: app.role,
+      location: app.location,
+      status: app.status,
+      applied_on: app.appliedOn,
+      updated_on: app.updatedOn,
+      notes: app.notes,
+      url: app.url,
+      cv_summary: app.cvSummary,
+      cover_letter: app.coverLetter,
+      starred: app.starred,
+    })
   }
 
-  function updateApplications(apps: Application[]) {
+  async function updateApplications(apps: Application[]) {
     setApplications(apps)
-    localStorage.setItem(APPS_KEY, JSON.stringify(apps))
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    await Promise.all(
+      apps.map((app) =>
+        supabase
+          .from('applications')
+          .update({
+            company: app.company,
+            role: app.role,
+            location: app.location,
+            status: app.status,
+            applied_on: app.appliedOn,
+            updated_on: app.updatedOn,
+            notes: app.notes,
+            url: app.url,
+            cv_summary: app.cvSummary,
+            cover_letter: app.coverLetter,
+            starred: app.starred,
+          })
+          .eq('id', app.id)
+          .eq('user_id', user.id)
+      )
+    )
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    window.location.href = '/auth'
   }
 
   if (!hydrated) return null
@@ -96,10 +178,9 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <Sidebar tab={tab} setTab={setTab} appCount={applications.length} />
+      <Sidebar tab={tab} setTab={setTab} appCount={applications.length} onSignOut={handleSignOut} />
 
       <main style={{ maxWidth: 1320, margin: '0 auto', padding: '32px 40px 60px', width: '100%' }}>
-        {/* Breadcrumb + header */}
         <header style={{ marginBottom: 28 }}>
           <div
             style={{
