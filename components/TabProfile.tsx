@@ -12,6 +12,247 @@ import {
 import { PhotoCropper } from './PhotoCropper'
 import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry } from '@/types'
 
+// ─── cv import ────────────────────────────────────────────────────────────────
+
+type ParsedProfile = Partial<Profile>
+
+function mergeParsed(existing: Profile, parsed: ParsedProfile): Profile {
+  const mergeStr = (cur: string, next?: string) =>
+    cur.trim() ? cur : (next ?? '').trim() ? (next as string) : cur
+  return {
+    name: mergeStr(existing.name, parsed.name),
+    email: mergeStr(existing.email, parsed.email),
+    linkedin: mergeStr(existing.linkedin, parsed.linkedin),
+    github: mergeStr(existing.github, parsed.github),
+    photo: existing.photo,
+    role: mergeStr(existing.role, parsed.role),
+    location: mergeStr(existing.location, parsed.location),
+    about: mergeStr(existing.about, parsed.about),
+    skills: mergeStr(existing.skills, parsed.skills),
+    experience:
+      existing.experience.length > 0
+        ? existing.experience
+        : (parsed.experience ?? existing.experience),
+    projects:
+      existing.projects.length > 0 ? existing.projects : (parsed.projects ?? existing.projects),
+    education:
+      existing.education.length > 0
+        ? existing.education
+        : (parsed.education ?? existing.education),
+    languages:
+      existing.languages.length > 0
+        ? existing.languages
+        : (parsed.languages ?? existing.languages),
+  }
+}
+
+function ImportSummary({ parsed }: { parsed: ParsedProfile }) {
+  const lines: string[] = []
+  if (parsed.name) lines.push(`Name: ${parsed.name}`)
+  if (parsed.email) lines.push(`Email: ${parsed.email}`)
+  if (parsed.role) lines.push(`Role: ${parsed.role}`)
+  if (parsed.location) lines.push(`Location: ${parsed.location}`)
+  if (parsed.skills) lines.push(`Skills: ${parsed.skills.slice(0, 60)}${parsed.skills.length > 60 ? '…' : ''}`)
+  if (parsed.experience?.length)
+    lines.push(`${parsed.experience.length} work experience entr${parsed.experience.length === 1 ? 'y' : 'ies'}`)
+  if (parsed.projects?.length)
+    lines.push(`${parsed.projects.length} project${parsed.projects.length === 1 ? '' : 's'}`)
+  if (parsed.education?.length)
+    lines.push(`${parsed.education.length} education entr${parsed.education.length === 1 ? 'y' : 'ies'}`)
+  if (parsed.languages?.length)
+    lines.push(`${parsed.languages.length} language${parsed.languages.length === 1 ? '' : 's'}`)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, margin: '10px 0' }}>
+      {lines.map((l) => (
+        <div key={l} style={{ display: 'flex', gap: 8, fontSize: 13, color: 'var(--text-muted)' }}>
+          <span style={{ color: 'var(--success, #16a34a)', fontWeight: 600 }}>✓</span>
+          {l}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CVImportModal({
+  parsed,
+  onApply,
+  onCancel,
+}: {
+  parsed: ParsedProfile
+  onApply: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.45)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+      }}
+    >
+      <div
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--shadow-sm)',
+          padding: 24,
+          width: 400,
+          maxWidth: '90vw',
+        }}
+      >
+        <div
+          className="font-serif"
+          style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}
+        >
+          Found in your CV
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>
+          Empty fields will be filled. Existing data stays untouched.
+        </div>
+        <ImportSummary parsed={parsed} />
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginTop: 16,
+            paddingTop: 14,
+            borderTop: '1px solid var(--border)',
+          }}
+        >
+          <button
+            onClick={onApply}
+            style={{
+              flex: 1,
+              padding: '8px 0',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--accent)',
+              color: 'white',
+              border: '1px solid var(--accent)',
+              fontSize: 14,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            Apply to profile
+          </button>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'transparent',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border-strong)',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CVImport({
+  profile,
+  onApply,
+}: {
+  profile: Profile
+  onApply: (merged: Profile) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [status, setStatus] = useState<'idle' | 'loading' | 'preview' | 'error'>('idle')
+  const [parsed, setParsed] = useState<ParsedProfile | null>(null)
+  const [errorMsg, setErrorMsg] = useState('')
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setStatus('loading')
+    setErrorMsg('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/parse-cv', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) {
+        setErrorMsg(json.error ?? 'Something went wrong')
+        setStatus('error')
+        return
+      }
+      setParsed(json.profile)
+      setStatus('preview')
+    } catch {
+      setErrorMsg('Network error')
+      setStatus('error')
+    }
+  }
+
+  function handleApply() {
+    if (!parsed) return
+    onApply(mergeParsed(profile, parsed))
+    setParsed(null)
+    setStatus('idle')
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={status === 'loading'}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 12px',
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--surface)',
+          color: 'var(--accent)',
+          border: '1px solid var(--accent)',
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+          opacity: status === 'loading' ? 0.7 : 1,
+          transition: 'all 120ms',
+        }}
+      >
+        {status === 'loading' ? 'Parsing…' : '↑ Import from CV'}
+      </button>
+
+      {status === 'error' && (
+        <div style={{ fontSize: 12, color: 'var(--danger, #dc2626)', marginTop: 4 }}>
+          {errorMsg}
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        style={{ display: 'none' }}
+        onChange={handleFile}
+      />
+
+      {status === 'preview' && parsed && (
+        <CVImportModal
+          parsed={parsed}
+          onApply={handleApply}
+          onCancel={() => { setParsed(null); setStatus('idle') }}
+        />
+      )}
+    </>
+  )
+}
+
 // ─── completion ───────────────────────────────────────────────────────────────
 
 const COMPLETION_FIELDS: { key: keyof Profile; label: string; weight: number; minLen?: number }[] =
@@ -648,10 +889,26 @@ export default function TabProfile({ profile, onSave }: TabProfileProps) {
       >
         <div style={{ marginBottom: 18 }}>
           <div
-            className="font-serif"
-            style={{ fontSize: 20, fontWeight: 500, marginBottom: 4, color: 'var(--text)' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 4,
+            }}
           >
-            Your profile
+            <div
+              className="font-serif"
+              style={{ fontSize: 20, fontWeight: 500, color: 'var(--text)' }}
+            >
+              Your profile
+            </div>
+            <CVImport
+              profile={draft}
+              onApply={(merged) => {
+                setDraft(merged)
+                setSaved(false)
+              }}
+            />
           </div>
           <div style={{ fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.55 }}>
             Used to personalize generated documents. The more detail, the better the result.
