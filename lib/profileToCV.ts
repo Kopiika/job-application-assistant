@@ -1,4 +1,4 @@
-import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry } from '@/types'
+import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry, SkillCategory } from '@/types'
 
 function normalizeBullets(text: string): string {
   return text
@@ -49,6 +49,13 @@ export function serializeLanguages(entries: LanguageEntry[]): string {
   return entries.map((l) => `${l.language}: ${l.level}`).join('\n')
 }
 
+export function serializeSkills(categories: SkillCategory[]): string {
+  return categories
+    .filter((c) => c.items.trim())
+    .map((c) => (c.name.trim() ? `${c.name}: ${c.items}` : c.items))
+    .join('\n')
+}
+
 export function profileToCV(p: Profile): string {
   const lines: string[] = []
 
@@ -62,9 +69,10 @@ export function profileToCV(p: Profile): string {
     lines.push('\nABOUT')
     lines.push(p.about)
   }
-  if (p.skills) {
+  const skillsText = serializeSkills(p.skills)
+  if (skillsText) {
     lines.push('\nSKILLS')
-    lines.push(p.skills)
+    lines.push(skillsText)
   }
   if (p.experience.length) {
     lines.push('\nEXPERIENCE')

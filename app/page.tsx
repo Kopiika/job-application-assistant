@@ -7,7 +7,7 @@ import TabProfile from '@/components/TabProfile'
 import TabTracker from '@/components/TabTracker'
 import { IconChevronRight } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
-import type { Profile, Application } from '@/types'
+import type { Profile, Application, SkillCategory } from '@/types'
 import type { GenState } from '@/components/TabGenerate'
 
 type Tab = 'generate' | 'tracker' | 'profile'
@@ -19,7 +19,7 @@ const DEFAULT_PROFILE: Profile = {
   github: '',
   photo: undefined,
   role: '',
-  skills: '',
+  skills: [],
   experience: [],
   projects: [],
   education: [],
@@ -37,7 +37,13 @@ function migrateProfile(raw: unknown): Profile {
     github: (p.github as string) ?? '',
     photo: p.photo as string | undefined,
     role: (p.role as string) ?? '',
-    skills: (p.skills as string) ?? '',
+    skills: (() => {
+      const s = p.skills
+      if (Array.isArray(s)) return s as SkillCategory[]
+      if (typeof s === 'string' && (s as string).trim())
+        return [{ name: 'General', items: s as string }]
+      return []
+    })(),
     experience: Array.isArray(p.experience) ? p.experience : [],
     projects: Array.isArray(p.projects) ? p.projects : [],
     education: Array.isArray(p.education) ? p.education : [],

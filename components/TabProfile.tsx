@@ -10,7 +10,7 @@ import {
   IconCamera,
 } from '@/components/icons'
 import { PhotoCropper } from './PhotoCropper'
-import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry } from '@/types'
+import type { Profile, ExperienceEntry, ProjectEntry, EducationEntry, LanguageEntry, SkillCategory } from '@/types'
 
 // ─── cv import ────────────────────────────────────────────────────────────────
 
@@ -28,7 +28,15 @@ function mergeParsed(existing: Profile, parsed: ParsedProfile): Profile {
     role: mergeStr(existing.role, parsed.role),
     location: mergeStr(existing.location, parsed.location),
     about: mergeStr(existing.about, parsed.about),
-    skills: mergeStr(existing.skills, parsed.skills),
+    skills: (() => {
+      if (existing.skills.length > 0) return existing.skills
+      const raw = parsed.skills as unknown
+      if (!raw) return []
+      if (Array.isArray(raw)) return raw as SkillCategory[]
+      if (typeof raw === 'string' && (raw as string).trim())
+        return [{ name: 'General', items: raw as string }]
+      return []
+    })(),
     experience:
       existing.experience.length > 0
         ? existing.experience
@@ -52,7 +60,13 @@ function ImportSummary({ parsed }: { parsed: ParsedProfile }) {
   if (parsed.email) lines.push(`Email: ${parsed.email}`)
   if (parsed.role) lines.push(`Role: ${parsed.role}`)
   if (parsed.location) lines.push(`Location: ${parsed.location}`)
-  if (parsed.skills) lines.push(`Skills: ${parsed.skills.slice(0, 60)}${parsed.skills.length > 60 ? '…' : ''}`)
+  const skillsRaw = parsed.skills as unknown
+  const skillsText = Array.isArray(skillsRaw)
+    ? (skillsRaw as SkillCategory[]).map((c) => c.items).filter(Boolean).join(', ')
+    : typeof skillsRaw === 'string'
+      ? (skillsRaw as string)
+      : ''
+  if (skillsText) lines.push(`Skills: ${skillsText.slice(0, 60)}${skillsText.length > 60 ? '…' : ''}`)
   if (parsed.experience?.length)
     lines.push(`${parsed.experience.length} work experience entr${parsed.experience.length === 1 ? 'y' : 'ies'}`)
   if (parsed.projects?.length)
@@ -274,11 +288,16 @@ function computeCompletion(p: Profile) {
   const suggestions: string[] = []
   for (const f of COMPLETION_FIELDS) {
     const v = p[f.key]
-    const ok = Array.isArray(v)
-      ? (v as unknown[]).length > 0
-      : f.minLen
+    let ok: boolean
+    if (f.key === 'skills') {
+      ok = (v as SkillCategory[]).some((c) => c.items.trim().length > 0)
+    } else if (Array.isArray(v)) {
+      ok = (v as unknown[]).length > 0
+    } else {
+      ok = f.minLen
         ? ((v as string) ?? '').trim().length >= f.minLen
         : ((v as string) ?? '').trim().length > 0
+    }
     if (ok) score += f.weight
     else suggestions.push(f.label)
   }
@@ -802,41 +821,130 @@ function LangList({
   )
 }
 
-// ─── main ─────────────────────────────────────────────────────────────────────
+// ─── skill categories ─────────────────────────────────────────────────────────
 
-const SIMPLE_FIELDS: {
-  key: keyof Profile
-  label: string
-  hint?: string
-  placeholder: string
-  rows?: number
-}[] = [
-  {
-    key: 'role',
-    label: 'Current role / studies',
-    placeholder: 'Junior Full Stack Developer, Business College Helsinki',
-  },
-  {
-    key: 'skills',
-    label: 'Tech skills',
-    hint: 'Comma-separated — tools, languages, frameworks.',
-    placeholder: 'React, Node.js, TypeScript, PostgreSQL, Git, REST APIs…',
-    rows: 3,
-  },
-  {
-    key: 'location',
-    label: 'Location & availability',
-    placeholder: 'Helsinki — available from June 2026',
-  },
-  {
-    key: 'about',
-    label: 'About you',
-    hint: 'Used as context for cover letters. One short paragraph.',
-    placeholder:
-      'Junior developer who learns fastest in code review. Comfortable across the stack.',
-    rows: 4,
-  },
-]
+const DEFAULT_SKILL_CATEGORIES = ['Frontend', 'Backend', 'Databases', 'Testing', 'Tools']
+
+function SkillCategoriesEditor({
+  skills,
+  onChange,
+}: {
+  skills: SkillCategory[]
+  onChange: (v: SkillCategory[]) => void
+}) {
+  const add = (name = '') => onChange([...skills, { name, items: '' }])
+  const upd = (i: number, cat: SkillCategory) => onChange(skills.map((c, j) => (j === i ? cat : c)))
+  const rem = (i: number) => onChange(skills.filter((_, j) => j !== i))
+  const unused = DEFAULT_SKILL_CATEGORIES.filter(
+    (n) => !skills.some((c) => c.name.toLowerCase() === n.toLowerCase()),
+  )
+
+  return (
+    <div>
+      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>
+        Tech skills
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text-subtle)', marginBottom: 10 }}>
+        Comma-separated skills per category.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {skills.map((cat, i) => (
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <label style={{ display: 'block', width: 130, flexShrink: 0 }}>
+              {i === 0 && (
+                <div style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Category
+                </div>
+              )}
+              <input
+                value={cat.name}
+                onChange={(e) => upd(i, { ...cat, name: e.target.value })}
+                placeholder="Frontend"
+                style={{
+                  width: '100%',
+                  height: 32,
+                  padding: '0 10px',
+                  fontSize: 13,
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 6,
+                  outline: 'none',
+                  background: 'var(--surface)',
+                }}
+              />
+            </label>
+            <label style={{ display: 'block', flex: 1, minWidth: 0 }}>
+              {i === 0 && (
+                <div style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text-muted)', marginBottom: 4 }}>
+                  Skills
+                </div>
+              )}
+              <input
+                value={cat.items}
+                onChange={(e) => upd(i, { ...cat, items: e.target.value })}
+                placeholder="React, TypeScript, Next.js"
+                style={{
+                  width: '100%',
+                  height: 32,
+                  padding: '0 10px',
+                  fontSize: 13,
+                  border: '1px solid var(--border-strong)',
+                  borderRadius: 6,
+                  outline: 'none',
+                  background: 'var(--surface)',
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => rem(i)}
+              style={{ ...iconBtn, color: 'var(--danger, #dc2626)', height: 32, marginBottom: 0 }}
+            >
+              <IconTrash size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+        {unused.map((name) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => add(name)}
+            style={{
+              padding: '3px 10px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              background: 'var(--accent-soft)',
+              color: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              cursor: 'pointer',
+            }}
+          >
+            + {name}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => add('')}
+          style={{
+            padding: '3px 10px',
+            borderRadius: 6,
+            fontSize: 12,
+            background: 'var(--surface)',
+            color: 'var(--text-muted)',
+            border: '1px solid var(--border-strong)',
+            cursor: 'pointer',
+          }}
+        >
+          + Custom
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── main ─────────────────────────────────────────────────────────────────────
 
 interface TabProfileProps {
   profile: Profile
@@ -951,29 +1059,34 @@ export default function TabProfile({ profile, onSave }: TabProfileProps) {
             />
           </div>
 
-          {/* Simple fields */}
-          {SIMPLE_FIELDS.map((f) =>
-            f.rows ? (
-              <TextareaField
-                key={f.key}
-                label={f.label}
-                hint={f.hint}
-                value={draft[f.key] as string}
-                onChange={set(f.key)}
-                placeholder={f.placeholder}
-                rows={f.rows}
-              />
-            ) : (
-              <Field
-                key={f.key}
-                label={f.label}
-                hint={f.hint}
-                value={draft[f.key] as string}
-                onChange={set(f.key)}
-                placeholder={f.placeholder}
-              />
-            )
-          )}
+          {/* Role */}
+          <Field
+            label="Current role / studies"
+            value={draft.role}
+            onChange={set('role')}
+            placeholder="Junior Full Stack Developer, Business College Helsinki"
+          />
+
+          {/* Skills categories */}
+          <SkillCategoriesEditor skills={draft.skills} onChange={setVal('skills')} />
+
+          {/* Location */}
+          <Field
+            label="Location & availability"
+            value={draft.location}
+            onChange={set('location')}
+            placeholder="Helsinki — available from June 2026"
+          />
+
+          {/* About */}
+          <TextareaField
+            label="About you"
+            hint="Used as context for cover letters. One short paragraph."
+            value={draft.about}
+            onChange={set('about')}
+            placeholder="Junior developer who learns fastest in code review. Comfortable across the stack."
+            rows={4}
+          />
 
           <Divider />
           <ExpList entries={draft.experience} onChange={setVal('experience')} />

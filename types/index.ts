@@ -63,6 +63,11 @@ export interface LanguageEntry {
   level: string
 }
 
+export interface SkillCategory {
+  name: string
+  items: string
+}
+
 export interface Profile {
   name: string
   email: string
@@ -70,7 +75,7 @@ export interface Profile {
   github: string
   photo?: string
   role: string
-  skills: string
+  skills: SkillCategory[]
   experience: ExperienceEntry[]
   projects: ProjectEntry[]
   education: EducationEntry[]
