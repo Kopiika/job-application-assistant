@@ -19,6 +19,7 @@ interface ResultPanelProps {
   photo?: string
   onUpdate: (key: 'cv' | 'cover', value: string) => void
   onSaveToTracker: () => void
+  onClear: () => void
 }
 
 type DocTab = 'cv' | 'cover'
@@ -64,6 +65,7 @@ export default function ResultPanel({
   photo,
   onUpdate,
   onSaveToTracker,
+  onClear,
 }: ResultPanelProps) {
   const [activeTab, setActiveTab] = useState<DocTab>(cvSummary ? 'cv' : 'cover')
   const [editing, setEditing] = useState(false)
@@ -315,7 +317,29 @@ export default function ResultPanel({
           alignItems: 'center',
         }}
       >
-        <div style={{ fontSize: 12, color: 'var(--text-subtle)' }}>Tailored · ready to send</div>
+        <button
+          onClick={onClear}
+          style={{
+            fontSize: 12,
+            color: 'var(--text-subtle)',
+            padding: '5px 10px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'transparent',
+            border: '1px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 120ms',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-strong)'
+            e.currentTarget.style.color = 'var(--text-muted)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'transparent'
+            e.currentTarget.style.color = 'var(--text-subtle)'
+          }}
+        >
+          Clear
+        </button>
         <button
           onClick={onSaveToTracker}
           style={{

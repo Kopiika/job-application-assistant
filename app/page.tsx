@@ -8,6 +8,7 @@ import TabTracker from '@/components/TabTracker'
 import { IconChevronRight } from '@/components/icons'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Application } from '@/types'
+import type { GenState } from '@/components/TabGenerate'
 
 type Tab = 'generate' | 'tracker' | 'profile'
 
@@ -77,6 +78,7 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
   const [applications, setApplications] = useState<Application[]>([])
   const [hydrated, setHydrated] = useState(false)
+  const [genState, setGenState] = useState<GenState>({ status: 'idle' })
 
   const supabase = createClient()
 
@@ -212,7 +214,14 @@ export default function Home() {
           <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>{header.sub}</div>
         </header>
 
-        {tab === 'generate' && <TabGenerate profile={profile} onSaveApplication={addApplication} />}
+        {tab === 'generate' && (
+          <TabGenerate
+            profile={profile}
+            onSaveApplication={addApplication}
+            genState={genState}
+            onGenStateChange={setGenState}
+          />
+        )}
         {tab === 'tracker' && (
           <TabTracker applications={applications} setApplications={updateApplications} />
         )}

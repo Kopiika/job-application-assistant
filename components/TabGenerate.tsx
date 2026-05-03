@@ -7,16 +7,18 @@ import { profileToCV } from '@/lib/profileToCV'
 import { mergeCVWithTailored } from '@/lib/mergeCVWithTailored'
 import type { Profile, Application, GenerateResponse } from '@/types'
 
-interface TabGenerateProps {
-  profile: Profile
-  onSaveApplication: (app: Application) => void
-}
-
-type GenState =
+export type GenState =
   | { status: 'idle' }
   | { status: 'generating' }
   | { status: 'done'; cv: string | null; cover: string | null }
   | { status: 'error'; message: string }
+
+interface TabGenerateProps {
+  profile: Profile
+  onSaveApplication: (app: Application) => void
+  genState: GenState
+  onGenStateChange: (s: GenState) => void
+}
 
 const STEPS = [
   'Reading the job description',
@@ -25,9 +27,13 @@ const STEPS = [
   'Writing cover letter',
 ]
 
-export default function TabGenerate({ profile, onSaveApplication }: TabGenerateProps) {
+export default function TabGenerate({
+  profile,
+  onSaveApplication,
+  genState,
+  onGenStateChange,
+}: TabGenerateProps) {
   const [jd, setJd] = useState('')
-  const [genState, setGenState] = useState<GenState>({ status: 'idle' })
   const [saveModal, setSaveModal] = useState(false)
   const [generateCV, setGenerateCV] = useState(true)
   const [generateCover, setGenerateCover] = useState(true)
@@ -38,11 +44,11 @@ export default function TabGenerate({ profile, onSaveApplication }: TabGenerateP
     if (!jd.trim()) return
     const baseCV = profileToCV(profile)
     if (!baseCV.trim()) {
-      setGenState({ status: 'error', message: 'Fill in your profile first (My profile tab).' })
+      onGenStateChange({ status: 'error', message: 'Fill in your profile first (My profile tab).' })
       return
     }
 
-    setGenState({ status: 'generating' })
+    onGenStateChange({ status: 'generating' })
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
@@ -55,9 +61,9 @@ export default function TabGenerate({ profile, onSaveApplication }: TabGenerateP
       }
       const data: GenerateResponse = await res.json()
       const cv = data.tailoredFields ? mergeCVWithTailored(profile, data.tailoredFields) : null
-      setGenState({ status: 'done', cv, cover: data.coverLetter })
+      onGenStateChange({ status: 'done', cv, cover: data.coverLetter })
     } catch (err) {
-      setGenState({
+      onGenStateChange({
         status: 'error',
         message: err instanceof Error ? err.message : 'Something went wrong',
       })
@@ -66,7 +72,7 @@ export default function TabGenerate({ profile, onSaveApplication }: TabGenerateP
 
   function handleUpdate(key: 'cv' | 'cover', value: string) {
     if (genState.status !== 'done') return
-    setGenState({ ...genState, [key === 'cv' ? 'cv' : 'cover']: value })
+    onGenStateChange({ ...genState, [key === 'cv' ? 'cv' : 'cover']: value })
   }
 
   function handleSaveToTracker() {
@@ -295,6 +301,7 @@ export default function TabGenerate({ profile, onSaveApplication }: TabGenerateP
               photo={profile.photo}
               onUpdate={handleUpdate}
               onSaveToTracker={handleSaveToTracker}
+              onClear={() => onGenStateChange({ status: 'idle' })}
             />
           )}
         </div>
@@ -492,7 +499,7 @@ function SaveModal({
 
   return (
     <div
-      onClick={onClose}
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
       style={{
         position: 'fixed',
         inset: 0,
@@ -505,7 +512,6 @@ function SaveModal({
       }}
     >
       <div
-        onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--surface)',
           borderRadius: 'var(--radius-lg)',
