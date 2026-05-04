@@ -132,18 +132,44 @@ function sectionHeading(text: string): Paragraph {
   })
 }
 
-function sectionDivider(): Paragraph {
+function sectionDivider(): Table {
+  return new Table({
+    width: { size: CONTENT_W, type: WidthType.DXA },
+    columnWidths: [CONTENT_W],
+    borders: TABLE_NO_BORDER,
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: CONTENT_W, type: WidthType.DXA },
+            borders: {
+              top: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+              left: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+              right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
+              bottom: { style: BorderStyle.SINGLE, size: 4, color: DIVIDER_COLOR },
+            },
+            margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            // size:2 (1pt) → auto line-height ~24 twips instead of ~240, so the
+            // cell is nearly invisible and only the bottom border is visible.
+            children: [
+              new Paragraph({
+                spacing: { before: 0, after: 0 },
+                children: [new TextRun({ text: '', size: 2 })],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ],
+  })
+}
+
+// Spacer paragraph after the divider Table — provides the gap between the line and content.
+// Tables have no spacing.after, so this paragraph bridges the gap.
+function afterDivider(): Paragraph {
   return new Paragraph({
-    border: {
-      bottom: {
-        style: BorderStyle.SINGLE,
-        size: 6,
-        color: DIVIDER_COLOR,
-        space: 1,
-      },
-    },
-    spacing: { after: 120 },
-    children: [],
+    spacing: { before: 80, after: 0 },
+    children: [new TextRun({ text: '', size: 2 })],
   })
 }
 
@@ -515,6 +541,7 @@ export async function createCVDocx(
           sectionSpacer(),
           sectionHeading('Summary'),
           sectionDivider(),
+          afterDivider(),
           new Paragraph({
             spacing: { after: 200 },
             children: [new TextRun({ text: s.summary, size: 20 })],
@@ -522,19 +549,51 @@ export async function createCVDocx(
         ]
       : []),
 
-    ...(s.skills ? [sectionSpacer(), sectionHeading('Skills'), sectionDivider(), renderSkillsTable(s.skills)] : []),
+    ...(s.skills
+      ? [
+          sectionSpacer(),
+          sectionHeading('Skills'),
+          sectionDivider(),
+          afterDivider(),
+          renderSkillsTable(s.skills),
+        ]
+      : []),
 
     ...(s.experience
-      ? [sectionSpacer(), sectionHeading('Experience'), sectionDivider(), ...renderSectionBlock(s.experience)]
+      ? [
+          sectionSpacer(),
+          sectionHeading('Experience'),
+          sectionDivider(),
+          afterDivider(),
+          ...renderSectionBlock(s.experience),
+        ]
       : []),
     ...(s.projects
-      ? [sectionSpacer(), sectionHeading('Projects'), sectionDivider(), ...renderSectionBlock(s.projects)]
+      ? [
+          sectionSpacer(),
+          sectionHeading('Projects'),
+          sectionDivider(),
+          afterDivider(),
+          ...renderSectionBlock(s.projects),
+        ]
       : []),
     ...(s.education
-      ? [sectionSpacer(), sectionHeading('Education'), sectionDivider(), ...renderSectionBlock(s.education)]
+      ? [
+          sectionSpacer(),
+          sectionHeading('Education'),
+          sectionDivider(),
+          afterDivider(),
+          ...renderSectionBlock(s.education),
+        ]
       : []),
     ...(s.languages
-      ? [sectionSpacer(), sectionHeading('Languages'), sectionDivider(), renderLanguagesTable(s.languages)]
+      ? [
+          sectionSpacer(),
+          sectionHeading('Languages'),
+          sectionDivider(),
+          afterDivider(),
+          renderLanguagesTable(s.languages),
+        ]
       : []),
   ]
 
