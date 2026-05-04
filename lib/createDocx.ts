@@ -50,8 +50,8 @@ type SectionName = (typeof SECTION_NAMES)[number]
 interface CVSections {
   name: string
   position: string
-  email: string
   location: string
+  email: string
   linkedin: string
   github: string
   summary: string
@@ -89,8 +89,8 @@ function parseCVSections(text: string): CVSections {
   return {
     name: headerLines[0] ?? '',
     position: headerLines[1] ?? '',
-    email: contactParts[0] ?? '',
     location: contactParts[1] ?? '',
+    email: contactParts[0] ?? '',
     linkedin: contactParts[2] ?? '',
     github: contactParts[3] ?? '',
     summary: getText('SUMMARY'),
@@ -116,23 +116,11 @@ function detectImageType(buf: Buffer): 'jpg' | 'png' {
   return 'jpg'
 }
 
-// Zero-height bridge paragraph so that spacing.before on the heading
-// is respected even when the previous element is a Table.
-function sectionSpacer(): Paragraph {
-  return new Paragraph({
-    spacing: { before: 0, after: 0 },
-    children: [new TextRun({ text: '', size: 2 })],
-  })
-}
 
-function sectionHeading(text: string): Paragraph {
-  return new Paragraph({
-    spacing: { before: 440, after: 80 },
-    children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
-  })
-}
-
-function sectionDivider(): Table {
+// Heading + divider line in one Table so the border is guaranteed to render.
+// spacing.before:440 on the inner paragraph creates the section gap even when
+// the previous element is a Table (paragraph-inside-cell before is always respected).
+function sectionWithDivider(text: string): Table {
   return new Table({
     width: { size: CONTENT_W, type: WidthType.DXA },
     columnWidths: [CONTENT_W],
@@ -148,13 +136,11 @@ function sectionDivider(): Table {
               right: { style: BorderStyle.NONE, size: 0, color: 'auto' },
               bottom: { style: BorderStyle.SINGLE, size: 4, color: DIVIDER_COLOR },
             },
-            margins: { top: 0, bottom: 0, left: 0, right: 0 },
-            // size:2 (1pt) → auto line-height ~24 twips instead of ~240, so the
-            // cell is nearly invisible and only the bottom border is visible.
+            margins: { top: 0, bottom: 40, left: 0, right: 0 },
             children: [
               new Paragraph({
-                spacing: { before: 0, after: 0 },
-                children: [new TextRun({ text: '', size: 2 })],
+                spacing: { before: 440, after: 40 },
+                children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
               }),
             ],
           }),
@@ -164,11 +150,20 @@ function sectionDivider(): Table {
   })
 }
 
-// Spacer paragraph after the divider Table — provides the gap between the line and content.
-// Tables have no spacing.after, so this paragraph bridges the gap.
+// Spacer paragraph after sectionWithDivider — Tables have no spacing.after,
+// so this bridges the gap between the divider line and the section content.
 function afterDivider(): Paragraph {
   return new Paragraph({
     spacing: { before: 80, after: 0 },
+    children: [new TextRun({ text: '', size: 2 })],
+  })
+}
+
+// Spacer paragraph before sectionWithDivider — Tables have no spacing.before,
+// so this creates the gap between the previous section content and the next heading.
+function sectionSpacer(isFirst = false): Paragraph {
+  return new Paragraph({
+    spacing: { before: isFirst ? 80 : 300, after: 0 },
     children: [new TextRun({ text: '', size: 2 })],
   })
 }
@@ -435,7 +430,7 @@ function buildHeader(
 
   if (photoBuffer) {
     const imgType = detectImageType(photoBuffer)
-    const PHOTO_W = 1440 // 1 inch
+    const PHOTO_W = 2775 // fits 185px image
     const GAP = 280
     const TEXT_W = CONTENT_W - PHOTO_W - GAP
 
@@ -450,7 +445,7 @@ function buildHeader(
             new ImageRun({
               type: imgType,
               data: photoBuffer,
-              transformation: { width: 95, height: 95 },
+              transformation: { width: 185, height: 185 },
             }),
           ],
         }),
@@ -538,9 +533,8 @@ export async function createCVDocx(
 
     ...(s.summary
       ? [
-          sectionSpacer(),
-          sectionHeading('Summary'),
-          sectionDivider(),
+          sectionSpacer(true),
+          sectionWithDivider('Summary'),
           afterDivider(),
           new Paragraph({
             spacing: { after: 200 },
@@ -550,50 +544,20 @@ export async function createCVDocx(
       : []),
 
     ...(s.skills
-      ? [
-          sectionSpacer(),
-          sectionHeading('Skills'),
-          sectionDivider(),
-          afterDivider(),
-          renderSkillsTable(s.skills),
-        ]
+      ? [sectionSpacer(), sectionWithDivider('Skills'), afterDivider(), renderSkillsTable(s.skills)]
       : []),
 
     ...(s.experience
-      ? [
-          sectionSpacer(),
-          sectionHeading('Experience'),
-          sectionDivider(),
-          afterDivider(),
-          ...renderSectionBlock(s.experience),
-        ]
+      ? [sectionSpacer(), sectionWithDivider('Experience'), afterDivider(), ...renderSectionBlock(s.experience)]
       : []),
     ...(s.projects
-      ? [
-          sectionSpacer(),
-          sectionHeading('Projects'),
-          sectionDivider(),
-          afterDivider(),
-          ...renderSectionBlock(s.projects),
-        ]
+      ? [sectionSpacer(), sectionWithDivider('Projects'), afterDivider(), ...renderSectionBlock(s.projects)]
       : []),
     ...(s.education
-      ? [
-          sectionSpacer(),
-          sectionHeading('Education'),
-          sectionDivider(),
-          afterDivider(),
-          ...renderSectionBlock(s.education),
-        ]
+      ? [sectionSpacer(), sectionWithDivider('Education'), afterDivider(), ...renderSectionBlock(s.education)]
       : []),
     ...(s.languages
-      ? [
-          sectionSpacer(),
-          sectionHeading('Languages'),
-          sectionDivider(),
-          afterDivider(),
-          renderLanguagesTable(s.languages),
-        ]
+      ? [sectionSpacer(), sectionWithDivider('Languages'), afterDivider(), renderLanguagesTable(s.languages)]
       : []),
   ]
 
