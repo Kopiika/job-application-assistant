@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ResultPanel from '@/components/ResultPanel'
 import { IconSparkles, IconFileText, IconMail, IconCheck, IconRefresh } from '@/components/icons'
 import { profileToCV } from '@/lib/profileToCV'
@@ -33,7 +33,15 @@ export default function TabGenerate({
   genState,
   onGenStateChange,
 }: TabGenerateProps) {
-  const [jd, setJd] = useState('')
+  const [jd, setJd] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('jd') ?? ''
+  })
+
+  useEffect(() => {
+    if (jd) localStorage.setItem('jd', jd)
+    else localStorage.removeItem('jd')
+  }, [jd])
   const [saveModal, setSaveModal] = useState(false)
   const [generateCV, setGenerateCV] = useState(true)
   const [generateCover, setGenerateCover] = useState(true)

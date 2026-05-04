@@ -84,7 +84,22 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
   const [applications, setApplications] = useState<Application[]>([])
   const [hydrated, setHydrated] = useState(false)
-  const [genState, setGenState] = useState<GenState>({ status: 'idle' })
+  const [genState, setGenState] = useState<GenState>(() => {
+    if (typeof window === 'undefined') return { status: 'idle' }
+    try {
+      const stored = localStorage.getItem('genState')
+      if (stored) return JSON.parse(stored) as GenState
+    } catch {}
+    return { status: 'idle' }
+  })
+
+  useEffect(() => {
+    if (genState.status === 'done') {
+      localStorage.setItem('genState', JSON.stringify(genState))
+    } else if (genState.status === 'idle') {
+      localStorage.removeItem('genState')
+    }
+  }, [genState])
 
   const supabase = createClient()
 

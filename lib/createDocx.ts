@@ -116,9 +116,18 @@ function detectImageType(buf: Buffer): 'jpg' | 'png' {
   return 'jpg'
 }
 
+// Zero-height bridge paragraph so that spacing.before on the heading
+// is respected even when the previous element is a Table.
+function sectionSpacer(): Paragraph {
+  return new Paragraph({
+    spacing: { before: 0, after: 0 },
+    children: [new TextRun({ text: '', size: 2 })],
+  })
+}
+
 function sectionHeading(text: string): Paragraph {
   return new Paragraph({
-    spacing: { before: 320, after: 80 },
+    spacing: { before: 440, after: 80 },
     children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
   })
 }
@@ -503,6 +512,7 @@ export async function createCVDocx(
 
     ...(s.summary
       ? [
+          sectionSpacer(),
           sectionHeading('Summary'),
           sectionDivider(),
           new Paragraph({
@@ -512,19 +522,19 @@ export async function createCVDocx(
         ]
       : []),
 
-    ...(s.skills ? [sectionHeading('Skills'), sectionDivider(), renderSkillsTable(s.skills)] : []),
+    ...(s.skills ? [sectionSpacer(), sectionHeading('Skills'), sectionDivider(), renderSkillsTable(s.skills)] : []),
 
     ...(s.experience
-      ? [sectionHeading('Experience'), sectionDivider(), ...renderSectionBlock(s.experience)]
+      ? [sectionSpacer(), sectionHeading('Experience'), sectionDivider(), ...renderSectionBlock(s.experience)]
       : []),
     ...(s.projects
-      ? [sectionHeading('Projects'), sectionDivider(), ...renderSectionBlock(s.projects)]
+      ? [sectionSpacer(), sectionHeading('Projects'), sectionDivider(), ...renderSectionBlock(s.projects)]
       : []),
     ...(s.education
-      ? [sectionHeading('Education'), sectionDivider(), ...renderSectionBlock(s.education)]
+      ? [sectionSpacer(), sectionHeading('Education'), sectionDivider(), ...renderSectionBlock(s.education)]
       : []),
     ...(s.languages
-      ? [sectionHeading('Languages'), sectionDivider(), renderLanguagesTable(s.languages)]
+      ? [sectionSpacer(), sectionHeading('Languages'), sectionDivider(), renderLanguagesTable(s.languages)]
       : []),
   ]
 
