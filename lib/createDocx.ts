@@ -14,6 +14,13 @@ import {
   LevelFormat,
 } from 'docx'
 
+const FONT = 'Calibri'
+
+function tr(opts: ConstructorParameters<typeof TextRun>[0]): TextRun {
+  if (typeof opts === 'string') return new TextRun({ text: opts, font: FONT })
+  return new TextRun({ font: FONT, ...opts })
+}
+
 const ACCENT = '1A56A0'
 const GRAY = '555555'
 const LIGHT = '999999'
@@ -140,7 +147,7 @@ function sectionWithDivider(text: string): Table {
             children: [
               new Paragraph({
                 spacing: { before: 440, after: 40 },
-                children: [new TextRun({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
+                children: [tr({ text: text.toUpperCase(), bold: true, size: 22, color: ACCENT })],
               }),
             ],
           }),
@@ -155,7 +162,7 @@ function sectionWithDivider(text: string): Table {
 function afterDivider(): Paragraph {
   return new Paragraph({
     spacing: { before: 80, after: 0 },
-    children: [new TextRun({ text: '', size: 2 })],
+    children: [tr({ text: '', size: 2 })],
   })
 }
 
@@ -164,7 +171,7 @@ function afterDivider(): Paragraph {
 function sectionSpacer(isFirst = false): Paragraph {
   return new Paragraph({
     spacing: { before: isFirst ? 80 : 300, after: 0 },
-    children: [new TextRun({ text: '', size: 2 })],
+    children: [tr({ text: '', size: 2 })],
   })
 }
 
@@ -211,13 +218,13 @@ function renderEntryHeader(line: string): Table {
     children: [
       new Paragraph({
         spacing: { before: 180, after: subtitle ? 30 : 50 },
-        children: [new TextRun({ text: title, bold: true, size: 22 })],
+        children: [tr({ text: title, bold: true, size: 22 })],
       }),
       ...(subtitle
         ? [
             new Paragraph({
               spacing: { after: 50 },
-              children: [new TextRun({ text: subtitle, size: 20, color: ACCENT })],
+              children: [tr({ text: subtitle, size: 20, color: ACCENT })],
             }),
           ]
         : []),
@@ -232,7 +239,7 @@ function renderEntryHeader(line: string): Table {
       new Paragraph({
         alignment: AlignmentType.RIGHT,
         spacing: { before: 180 },
-        children: [new TextRun({ text: date, size: 19, italics: true, color: GRAY })],
+        children: [tr({ text: date, size: 19, italics: true, color: GRAY })],
       }),
     ],
   })
@@ -263,7 +270,7 @@ function renderSectionBlock(text: string): (Paragraph | Table)[] {
       return [new Paragraph({
         numbering: { reference: 'bullets', level: 0 },
         spacing: { after: nextIsTechStack ? 200 : 60 },
-        children: [new TextRun({ text: trimmed.replace(/^[•\-\*–]\s*/, ''), size: 20 })],
+        children: [tr({ text: trimmed.replace(/^[•\-\*–]\s*/, ''), size: 20 })],
       })]
     }
 
@@ -272,8 +279,8 @@ function renderSectionBlock(text: string): (Paragraph | Table)[] {
       return [new Paragraph({
         spacing: { after: 60 },
         children: items.flatMap((p, i) => [
-          new TextRun({ text: p, size: 20 }),
-          ...(i < items.length - 1 ? [new TextRun({ text: ' · ', size: 20, color: GRAY })] : []),
+          tr({ text: p, size: 20 }),
+          ...(i < items.length - 1 ? [tr({ text: ' · ', size: 20, color: GRAY })] : []),
         ]),
       })]
     }
@@ -286,15 +293,15 @@ function renderSectionBlock(text: string): (Paragraph | Table)[] {
       return [new Paragraph({
         spacing: { before: 80, after: 100 },
         children: parts.flatMap((p, i) => [
-          new TextRun({ text: p.trim(), size: 18, color: GRAY }),
-          ...(i < parts.length - 1 ? [new TextRun({ text: ' · ', size: 18, color: LIGHT })] : []),
+          tr({ text: p.trim(), size: 18, color: GRAY }),
+          ...(i < parts.length - 1 ? [tr({ text: ' · ', size: 18, color: LIGHT })] : []),
         ]),
       })]
     }
 
     return [new Paragraph({
       spacing: { after: 80 },
-      children: [new TextRun({ text: trimmed, size: 20 })],
+      children: [tr({ text: trimmed, size: 20 })],
     })]
   })
 }
@@ -323,7 +330,7 @@ function renderSkillsTable(text: string): Table {
               children: [
                 new Paragraph({
                   spacing: { after: 80 },
-                  children: [new TextRun({ text: line, size: 20 })],
+                  children: [tr({ text: line, size: 20 })],
                 }),
               ],
             }),
@@ -340,7 +347,7 @@ function renderSkillsTable(text: string): Table {
             children: [
               new Paragraph({
                 spacing: { after: 80 },
-                children: [new TextRun({ text: label, bold: true, size: 20 })],
+                children: [tr({ text: label, bold: true, size: 20 })],
               }),
             ],
           }),
@@ -350,7 +357,7 @@ function renderSkillsTable(text: string): Table {
             children: [
               new Paragraph({
                 spacing: { after: 80 },
-                children: [new TextRun({ text: value, size: 20 })],
+                children: [tr({ text: value, size: 20 })],
               }),
             ],
           }),
@@ -382,7 +389,7 @@ function renderLanguagesTable(text: string): Table {
         children: [
           new Paragraph({
             spacing: { after: 80 },
-            children: [new TextRun({ text: entry, size: 20 })],
+            children: [tr({ text: entry, size: 20 })],
           }),
         ],
       })
@@ -396,8 +403,8 @@ function renderLanguagesTable(text: string): Table {
         new Paragraph({
           spacing: { after: 80 },
           children: [
-            new TextRun({ text: lang + ': ', bold: true, size: 20 }),
-            new TextRun({ text: level, size: 20 }),
+            tr({ text: lang + ': ', bold: true, size: 20 }),
+            tr({ text: level, size: 20 }),
           ],
         }),
       ],
@@ -438,13 +445,13 @@ function buildHeader(
     (item) =>
       new Paragraph({
         spacing: { after: 40 },
-        children: [new TextRun({ text: item, size: 19, color: GRAY })],
+        children: [tr({ text: item, size: 19, color: GRAY })],
       })
   )
 
   if (photoBuffer) {
     const imgType = detectImageType(photoBuffer)
-    const PHOTO_W = 3226 // fits 215px image
+    const PHOTO_W = 2625 // fits 175px image
     const GAP = 280
     const TEXT_W = CONTENT_W - PHOTO_W - GAP
 
@@ -459,7 +466,7 @@ function buildHeader(
             new ImageRun({
               type: imgType,
               data: photoBuffer,
-              transformation: { width: 215, height: 215 },
+              transformation: { width: 175, height: 175 },
             }),
           ],
         }),
@@ -479,13 +486,13 @@ function buildHeader(
       children: [
         new Paragraph({
           spacing: { after: 60 },
-          children: [new TextRun({ text: displayName, bold: true, size: 52 })],
+          children: [tr({ text: displayName, bold: true, size: 52 })],
         }),
         ...(s.position
           ? [
               new Paragraph({
                 spacing: { after: 100 },
-                children: [new TextRun({ text: s.position, size: 26, color: GRAY })],
+                children: [tr({ text: s.position, size: 26, color: GRAY })],
               }),
             ]
           : []),
@@ -509,14 +516,14 @@ function buildHeader(
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 80 },
-      children: [new TextRun({ text: displayName, bold: true, size: 52 })],
+      children: [tr({ text: displayName, bold: true, size: 52 })],
     }),
     ...(s.position
       ? [
           new Paragraph({
             alignment: AlignmentType.CENTER,
             spacing: { after: 100 },
-            children: [new TextRun({ text: s.position, size: 26, color: GRAY })],
+            children: [tr({ text: s.position, size: 26, color: GRAY })],
           }),
         ]
       : []),
@@ -525,9 +532,9 @@ function buildHeader(
       alignment: AlignmentType.CENTER,
       spacing: { after: 300 },
       children: contactItems.flatMap((item, i) => [
-        new TextRun({ text: item, size: 20 }),
+        tr({ text: item, size: 20 }),
         ...(i < contactItems.length - 1
-          ? [new TextRun({ text: '  ·  ', size: 20, color: LIGHT })]
+          ? [tr({ text: '  ·  ', size: 20, color: LIGHT })]
           : []),
       ]),
     }),
@@ -552,7 +559,7 @@ export async function createCVDocx(
           afterDivider(),
           new Paragraph({
             spacing: { after: 200 },
-            children: [new TextRun({ text: s.summary, size: 20 })],
+            children: [tr({ text: s.summary, size: 20 })],
           }),
         ]
       : []),
@@ -630,11 +637,11 @@ export async function createCoverLetterDocx(coverText: string, name: string): Pr
           new Paragraph({
             alignment: AlignmentType.RIGHT,
             spacing: { after: 400 },
-            children: [new TextRun({ text: `${name} — ${today}`, size: 20, italics: true })],
+            children: [tr({ text: `${name} — ${today}`, size: 20, italics: true })],
           }),
           new Paragraph({
             spacing: { before: 0, after: 300 },
-            children: [new TextRun({ text: 'Cover Letter', bold: true, size: 26, color: ACCENT })],
+            children: [tr({ text: 'Cover Letter', bold: true, size: 26, color: ACCENT })],
           }),
           new Paragraph({
             border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: DIVIDER_COLOR } },
@@ -645,7 +652,7 @@ export async function createCoverLetterDocx(coverText: string, name: string): Pr
             (para) =>
               new Paragraph({
                 spacing: { after: 200 },
-                children: [new TextRun({ text: para, size: 22 })],
+                children: [tr({ text: para, size: 22 })],
               })
           ),
         ],
