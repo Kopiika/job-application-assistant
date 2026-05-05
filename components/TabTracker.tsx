@@ -5,12 +5,12 @@ import {
   IconPlus,
   IconSearch,
   IconMapPin,
-  IconCalendar,
   IconChevronDown,
   IconCheck,
   IconBriefcase,
   IconStar,
   IconX,
+  IconEdit,
 } from '@/components/icons'
 import type { Application, AppStatus } from '@/types'
 
@@ -27,12 +27,14 @@ const today = () => new Date().toISOString().slice(0, 10)
 interface TabTrackerProps {
   applications: Application[]
   setApplications: (apps: Application[]) => void
+  onDelete: (id: string) => void
 }
 
-export default function TabTracker({ applications, setApplications }: TabTrackerProps) {
+export default function TabTracker({ applications, setApplications, onDelete }: TabTrackerProps) {
   const [filter, setFilter] = useState<AppStatus | 'all'>('all')
   const [query, setQuery] = useState('')
   const [addOpen, setAddOpen] = useState(false)
+  const [editApp, setEditApp] = useState<Application | null>(null)
 
   const filtered = applications.filter((a) => {
     if (filter !== 'all' && a.status !== filter) return false
@@ -59,7 +61,11 @@ export default function TabTracker({ applications, setApplications }: TabTracker
   }
 
   function remove(id: string) {
-    setApplications(applications.filter((a) => a.id !== id))
+    onDelete(id)
+  }
+
+  function updateApp(updated: Application) {
+    setApplications(applications.map((a) => (a.id === updated.id ? updated : a)))
   }
 
   function addApp(
@@ -244,7 +250,6 @@ export default function TabTracker({ applications, setApplications }: TabTracker
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
-            overflow: 'hidden',
             boxShadow: 'var(--shadow-sm)',
           }}
         >
@@ -252,10 +257,11 @@ export default function TabTracker({ applications, setApplications }: TabTracker
             style={{
               display: 'grid',
               gridTemplateColumns:
-                '32px minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) 120px 120px 40px',
+                '32px minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) 120px 120px 40px 40px',
               padding: '10px 18px',
               background: 'var(--surface-2)',
               borderBottom: '1px solid var(--border)',
+              borderRadius: 'var(--radius) var(--radius) 0 0',
               fontSize: 11,
               fontWeight: 600,
               letterSpacing: '0.06em',
@@ -271,6 +277,7 @@ export default function TabTracker({ applications, setApplications }: TabTracker
             <div>Applied</div>
             <div>Updated</div>
             <div />
+            <div />
           </div>
           {filtered.map((app, i) => (
             <AppRow
@@ -280,6 +287,7 @@ export default function TabTracker({ applications, setApplications }: TabTracker
               onStatusChange={updateStatus}
               onStar={() => toggleStar(app.id)}
               onRemove={() => remove(app.id)}
+              onEdit={() => setEditApp(app)}
             />
           ))}
         </div>
@@ -291,6 +299,16 @@ export default function TabTracker({ applications, setApplications }: TabTracker
           onAdd={(app) => {
             addApp(app)
             setAddOpen(false)
+          }}
+        />
+      )}
+      {editApp && (
+        <EditModal
+          app={editApp}
+          onClose={() => setEditApp(null)}
+          onSave={(updated: Application) => {
+            updateApp(updated)
+            setEditApp(null)
           }}
         />
       )}
@@ -324,15 +342,18 @@ function AppRow({
   onStatusChange,
   onStar,
   onRemove,
+  onEdit,
 }: {
   app: Application
   isLast: boolean
   onStatusChange: (id: string, s: AppStatus) => void
   onStar: () => void
   onRemove: () => void
+  onEdit: () => void
 }) {
   const [hover, setHover] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   return (
     <div
@@ -340,15 +361,17 @@ function AppRow({
       onMouseLeave={() => {
         setHover(false)
         setMenuOpen(false)
+        setConfirmDelete(false)
       }}
       style={{
+        position: 'relative',
         display: 'grid',
-        gridTemplateColumns: '32px minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) 120px 120px 40px',
+        gridTemplateColumns: '32px minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr) 120px 120px 40px 40px',
         padding: '14px 18px',
         gap: 12,
         alignItems: 'center',
         borderBottom: isLast ? 'none' : '1px solid var(--border)',
-        background: hover ? 'var(--surface-2)' : 'transparent',
+        background: confirmDelete ? 'var(--danger-soft)' : hover ? 'var(--surface-2)' : 'transparent',
         transition: 'background 100ms',
       }}
     >
@@ -483,17 +506,76 @@ function AppRow({
       </div>
 
       <button
-        onClick={onRemove}
+        onClick={onEdit}
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: hover ? 'var(--danger)' : 'transparent',
+          color: hover && !confirmDelete ? 'var(--text-subtle)' : 'transparent',
+          transition: 'color 120ms',
+        }}
+      >
+        <IconEdit size={14} />
+      </button>
+      <button
+        onClick={() => setConfirmDelete(true)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: hover && !confirmDelete ? 'var(--danger)' : 'transparent',
           transition: 'color 120ms',
         }}
       >
         <IconX size={14} />
       </button>
+
+      {confirmDelete && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 8,
+            padding: '0 18px',
+            background: 'var(--danger-soft)',
+            borderBottom: isLast ? 'none' : '1px solid var(--border)',
+          }}
+        >
+          <span style={{ fontSize: 13, color: 'var(--danger)', marginRight: 4 }}>
+            Delete this entry?
+          </span>
+          <button
+            onClick={onRemove}
+            style={{
+              padding: '5px 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 13,
+              fontWeight: 500,
+              background: 'var(--danger)',
+              color: 'white',
+              border: '1px solid var(--danger)',
+            }}
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => setConfirmDelete(false)}
+            style={{
+              padding: '5px 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 13,
+              color: 'var(--text)',
+              border: '1px solid var(--border-strong)',
+              background: 'var(--surface)',
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -673,6 +755,188 @@ function AddModal({
             }}
           >
             Add
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function EditModal({
+  app,
+  onClose,
+  onSave,
+}: {
+  app: Application
+  onClose: () => void
+  onSave: (app: Application) => void
+}) {
+  const [form, setForm] = useState({
+    company: app.company,
+    role: app.role,
+    location: app.location,
+    status: app.status,
+    url: app.url || '',
+    notes: app.notes || '',
+    appliedOn: app.appliedOn || today(),
+  })
+  const set =
+    (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'oklch(0.2 0.012 70 / 0.4)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 50,
+        animation: 'fadeIn 160ms ease',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-lg)',
+          boxShadow: 'var(--shadow-lg)',
+          width: '100%',
+          maxWidth: 520,
+          animation: 'popIn 200ms ease',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            padding: '18px 22px',
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Edit application</div>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)', display: 'flex' }}>
+            <IconX size={18} />
+          </button>
+        </div>
+        <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <ModalField
+              label="Company"
+              value={form.company}
+              onChange={set('company')}
+              placeholder="e.g. Reaktor"
+            />
+            <ModalField
+              label="Role"
+              value={form.role}
+              onChange={set('role')}
+              placeholder="e.g. Junior Frontend"
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <ModalField
+              label="Location"
+              value={form.location}
+              onChange={set('location')}
+              placeholder="Helsinki, Hybrid"
+            />
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>
+                Status
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 4,
+                  padding: 3,
+                  background: 'var(--surface-2)',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {STATUS_ORDER.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setForm((f) => ({ ...f, status: s }))}
+                    style={{
+                      flex: 1,
+                      padding: '5px 4px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      background: form.status === s ? 'var(--surface)' : 'transparent',
+                      color: form.status === s ? 'var(--text)' : 'var(--text-muted)',
+                      boxShadow: form.status === s ? 'var(--shadow-sm)' : 'none',
+                    }}
+                  >
+                    {STATUS_CONFIG[s].label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <ModalField
+            label="Applied on"
+            type="date"
+            value={form.appliedOn}
+            onChange={set('appliedOn')}
+            placeholder=""
+          />
+          <ModalField
+            label="Job posting URL"
+            value={form.url}
+            onChange={set('url')}
+            placeholder="https://…"
+          />
+        </div>
+        <div
+          style={{
+            padding: '14px 22px',
+            borderTop: '1px solid var(--border)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 8,
+            background: 'var(--surface-2)',
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 14,
+              color: 'var(--text)',
+              border: '1px solid transparent',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              if (!form.company || !form.role) return
+              onSave({ ...app, ...form, updatedOn: today() })
+            }}
+            disabled={!form.company || !form.role}
+            style={{
+              padding: '8px 14px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 14,
+              fontWeight: 500,
+              background: 'var(--accent)',
+              color: 'white',
+              border: '1px solid var(--accent)',
+              opacity: !form.company || !form.role ? 0.5 : 1,
+              cursor: !form.company || !form.role ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Save
           </button>
         </div>
       </div>

@@ -80,7 +80,12 @@ const HEADERS: Record<Tab, { title: string; sub: string }> = {
 }
 
 export default function Home() {
-  const [tab, setTab] = useState<Tab>('generate')
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'generate'
+    const stored = localStorage.getItem('tab')
+    if (stored === 'generate' || stored === 'tracker' || stored === 'profile') return stored
+    return 'generate'
+  })
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE)
   const [applications, setApplications] = useState<Application[]>([])
   const [hydrated, setHydrated] = useState(false)
@@ -92,6 +97,10 @@ export default function Home() {
     } catch {}
     return { status: 'idle' }
   })
+
+  useEffect(() => {
+    localStorage.setItem('tab', tab)
+  }, [tab])
 
   useEffect(() => {
     if (genState.status === 'done') {
@@ -190,6 +199,15 @@ export default function Home() {
     )
   }
 
+  async function deleteApplication(id: string) {
+    setApplications((prev) => prev.filter((a) => a.id !== id))
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('applications').delete().eq('id', id).eq('user_id', user.id)
+  }
+
   async function handleSignOut() {
     await supabase.auth.signOut()
     window.location.href = '/auth'
@@ -244,7 +262,11 @@ export default function Home() {
           />
         )}
         {tab === 'tracker' && (
-          <TabTracker applications={applications} setApplications={updateApplications} />
+          <TabTracker
+            applications={applications}
+            setApplications={updateApplications}
+            onDelete={deleteApplication}
+          />
         )}
         {tab === 'profile' && <TabProfile profile={profile} onSave={saveProfile} />}
       </main>

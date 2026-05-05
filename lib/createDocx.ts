@@ -247,42 +247,56 @@ function renderEntryHeader(line: string): Table {
 
 function renderSectionBlock(text: string): (Paragraph | Table)[] {
   if (!text) return []
-  return text
+  const lines = text
     .split('\n')
     .map((l) => l.trimEnd())
     .filter((l) => l.trim().length > 0)
-    .map((line) => {
-      const trimmed = line.trim()
-      const isBullet = /^[•\-\*–]\s/.test(trimmed)
-      const hasDot = trimmed.includes(' · ')
 
-      if (isBullet) {
-        return new Paragraph({
-          numbering: { reference: 'bullets', level: 0 },
-          spacing: { after: 60 },
-          children: [new TextRun({ text: trimmed.replace(/^[•\-\*–]\s*/, ''), size: 20 })],
-        })
-      }
+  return lines.flatMap((line, idx): (Paragraph | Table)[] => {
+    const trimmed = line.trim()
+    const nextTrimmed = (lines[idx + 1] ?? '').trim()
+    const isBullet = /^[•\-\*–]\s/.test(trimmed)
+    const hasDot = trimmed.includes(' · ')
+    const nextIsTechStack = /^Tech stack:\s*/i.test(nextTrimmed)
 
-      if (hasDot) {
-        const parts = trimmed.split(' · ')
-        const isEntry = parts.length >= 2 && isDateLike(parts[parts.length - 1])
-        if (isEntry) return renderEntryHeader(trimmed)
+    if (isBullet) {
+      return [new Paragraph({
+        numbering: { reference: 'bullets', level: 0 },
+        spacing: { after: nextIsTechStack ? 200 : 60 },
+        children: [new TextRun({ text: trimmed.replace(/^[•\-\*–]\s*/, ''), size: 20 })],
+      })]
+    }
 
-        return new Paragraph({
-          spacing: { before: 80, after: 100 },
-          children: parts.flatMap((p, i) => [
-            new TextRun({ text: p.trim(), size: 18, color: GRAY }),
-            ...(i < parts.length - 1 ? [new TextRun({ text: ' · ', size: 18, color: LIGHT })] : []),
-          ]),
-        })
-      }
+    if (/^Tech stack:\s*/i.test(trimmed)) {
+      const items = trimmed.replace(/^Tech stack:\s*/i, '').split(' · ').map((p) => p.trim())
+      return [new Paragraph({
+        spacing: { after: 60 },
+        children: items.flatMap((p, i) => [
+          new TextRun({ text: p, size: 20 }),
+          ...(i < items.length - 1 ? [new TextRun({ text: ' · ', size: 20, color: GRAY })] : []),
+        ]),
+      })]
+    }
 
-      return new Paragraph({
-        spacing: { after: 80 },
-        children: [new TextRun({ text: trimmed, size: 20 })],
-      })
-    })
+    if (hasDot) {
+      const parts = trimmed.split(' · ')
+      const isEntry = parts.length >= 2 && isDateLike(parts[parts.length - 1])
+      if (isEntry) return [renderEntryHeader(trimmed)]
+
+      return [new Paragraph({
+        spacing: { before: 80, after: 100 },
+        children: parts.flatMap((p, i) => [
+          new TextRun({ text: p.trim(), size: 18, color: GRAY }),
+          ...(i < parts.length - 1 ? [new TextRun({ text: ' · ', size: 18, color: LIGHT })] : []),
+        ]),
+      })]
+    }
+
+    return [new Paragraph({
+      spacing: { after: 80 },
+      children: [new TextRun({ text: trimmed, size: 20 })],
+    })]
+  })
 }
 
 function renderSkillsTable(text: string): Table {
@@ -430,7 +444,7 @@ function buildHeader(
 
   if (photoBuffer) {
     const imgType = detectImageType(photoBuffer)
-    const PHOTO_W = 2775 // fits 185px image
+    const PHOTO_W = 3226 // fits 215px image
     const GAP = 280
     const TEXT_W = CONTENT_W - PHOTO_W - GAP
 
@@ -445,7 +459,7 @@ function buildHeader(
             new ImageRun({
               type: imgType,
               data: photoBuffer,
-              transformation: { width: 185, height: 185 },
+              transformation: { width: 215, height: 215 },
             }),
           ],
         }),
