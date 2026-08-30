@@ -8,7 +8,7 @@ A personal job application tool built with Next.js 16, React 19, and TypeScript.
 - **Profile tab** — manage your full profile: contact details, photo, experience, projects, education, languages, and skills. Stored locally in `localStorage`.
 - **Tracker tab** — log every application with company, role, status (`draft → applied → interview → offer → rejected`), notes, and a link. Star and filter entries.
 - **DOCX export** — generated documents are assembled into a `.docx` file via the `/api/docx` route and downloaded in one click.
-- **Google Drive upload** — the DOCX is uploaded to a configured Drive folder via a service-account-backed `/api/drive` route.
+- **Google Drive upload** — the DOCX is uploaded to a configured Drive folder via an OAuth-user-token-backed `/api/drive` route.
 
 ## Tech stack
 
@@ -48,7 +48,7 @@ GOOGLE_REFRESH_TOKEN=...
 GOOGLE_DRIVE_FOLDER_ID=...
 ```
 
-> **Google Drive note:** the target folder must be a **Shared Drive** folder shared with your service account. Personal "My Drive" folders do not work with service accounts.
+> **Google Drive note:** uploads authenticate as your own Google account (OAuth `client_id`/`client_secret`/`refresh_token`), so a regular "My Drive" folder works fine — the folder just needs to belong to (or be shared with) the account behind `GOOGLE_REFRESH_TOKEN`. If your OAuth app is still in "Testing" publishing status in Google Cloud Console, the refresh token expires after 7 days and uploads will start failing with `invalid_grant` until you generate a new one.
 
 ### 3. Run the development server
 
