@@ -5,13 +5,14 @@
 /.pnp
 .pnp.*
 .yarn/*
-!.yarn/patches
+!.yarn/patches  
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
 
 # testing
 /coverage
+/notes.md
 
 # next.js
 /.next/
